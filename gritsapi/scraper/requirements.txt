@@ -1,0 +1,8 @@
+gitpython
+pymongo
+pyyaml
+lxml
+readability-lxml
+cssselect
+futures
+beautifulsoup4

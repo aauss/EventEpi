@@ -1,0 +1,16 @@
+{
+  "apiVersion": "1.0.0",
+  "swaggerVersion": "1.2",
+  "apis": [
+    {
+      "path": "/../listings/diagnose",
+      "description": "Analyze a document for features extraction and differential diagnosis"
+    }
+  ],
+  "info": {
+    "title": "GRITS api",
+    "description": "Documentation for the GRITS api server",
+    "license": "Apache 2.0",
+    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0.html"
+  }
+}

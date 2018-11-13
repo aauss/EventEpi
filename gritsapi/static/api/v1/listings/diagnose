@@ -1,0 +1,222 @@
+{
+  "apiVersion": "1.0.0",
+  "swaggerVersion": "1.2",
+  "basePath": "/api/v1",
+  "resourcePath": "/api/v1",
+  "produces": [
+    "application/json"
+  ],
+  "apis": [
+    {
+      "path": "/public_diagnose",
+      "operations": [
+        {
+          "method": "POST",
+          "summary": "Submit a document to be analyzed",
+          "notes": "",
+          "type": "Analysis",
+          "nickname": "diagnose",
+          "authorizations": {},
+          "parameters": [
+             {
+              "name": "content",
+              "description": "the document to be analyzed",
+              "required": true,
+              "type": "string",
+              "paramType": "form"
+            },
+            {
+              "name": "api_key",
+              "description": "the api key",
+              "required": true,
+              "type": "string",
+              "paramType": "form"
+            }
+          ],
+          "responseMessages": []
+        }
+      ]
+    }
+  ],
+  "models": {
+    "Input": {
+      "id": "Input",
+      "properties": {
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    "Analysis": {
+      "id": "Analysis",
+      "properties" : {
+        "keywords_found": {
+          "type": "array",
+          "items": {
+            "$ref": "Keyword"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "Feature"
+          }
+        },
+        "dateOfDiagnosis": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "diagnoserVersion": {
+          "type": "string"
+        },
+        "diseases": {
+          "type": "array",
+          "items": {
+            "$ref": "Disease"
+          }
+        }
+      }
+    },
+    "Keywords": {
+      "id": "Keyword",
+      "properties": {
+        "count": {
+          "type": "number",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "string"
+          }
+        }
+      }
+    },
+    "Feature": {
+      "id": "Feature",
+      "properties": {
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "string"
+          }
+        },
+        "text": {
+          "type": "string"
+        },
+        "cumulative": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "textOffsets": {
+          "type": "array",
+          "items": {
+            "$ref": "TextOffset"
+          }
+        },
+        "type": {
+          "type": "string"
+        },
+        "geoname": {
+          "$ref": "Geoname"
+        }
+      }
+    },
+    "Geoname": {
+      "id": "Geoname",
+      "properties": {
+        "admin3 code": {
+          "type": "string"
+        },
+        "modification date": {
+          "type": "string",
+          "format": "date"
+        },
+        "admin1 code": {
+          "type": "string"
+        },
+        "elevation": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        },
+        "admin2 code": {
+          "type": "string"
+        },
+        "dem": {
+          "type": "string"
+        },
+        "geonameid": {
+          "type": "string"
+        },
+        "lemmatized_name": {
+          "type": "string"
+        },
+        "country code": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "float"
+        },
+        "latitude": {
+          "type": "number",
+          "format": "float"
+        },
+        "admin4 code": {
+          "type": "string"
+        },
+        "feature code": {
+          "type": "string"
+        },
+        "feature class": {
+          "type": "string"
+        },
+        "cc2": {
+          "type": "string"
+        },
+        "asciiname": {
+          "type": "string"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "_id": {
+          "type": "string"
+        },
+        "population": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "Disease": {
+      "id": "Disease",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "probability": {
+          "type": "number",
+          "format": "float"
+        },
+        "keywords": {
+          "type": "array",
+          "$ref": "DiseaseKeyword"
+        },
+        "inferred_keywords": {
+          "type": "array",
+          "$ref": "DiseaseKeyword"
+        }
+      }
+    }
+  }
+}
