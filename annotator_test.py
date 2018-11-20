@@ -52,11 +52,12 @@ else:
         print("Retrieve failed. Pickle might be corrupted. Delete example_who_don.p and try again.")
 
 # Test geonames
-assert geonames(example_who_don) == Entity(entity='geonames', resolved=['Republic of Uganda', 'South Sudan'])\
-    , "geonames failes"
+assert geonames(example_who_don) == Entity(entity='geonames', resolved=['Republic of Uganda', 'South Sudan']),\
+    "geonames failed"
 assert keywords(example_who_don) == Entity(entity='keywords', resolved=['Ebola hemorrhagic fever']), "keywords failed"
 assert cases(example_who_don, raw=True) == \
        Entity(entity='cases', resolved=[2, 1, 31, 4, 2, 3, 3, 3, 31, 12, 9, 2, 103, 14, 11, 341, 303, 38, 215, 177, 38,
                                         11, 3, 1, 2]), "case numbers failed"
 assert dates(example_who_don) == Entity(entity='dates', resolved=['2018-11-07']), "dates failed"
 print("All test completed.")
+create_annotated_database(example_who_don,[])

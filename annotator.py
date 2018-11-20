@@ -139,20 +139,22 @@ def dates(doc, raw=False):
 
 
 # Run this shit (a.k.a annotate all the scraped WHO DONs)
-def create_annotated_database(texts, entity_funcs, raw=False):
+def create_annotated_database(texts, entity_funcs):
     # TODO: create a dict, to specifically set raw for different annotators
     """Given a list of texts (str) annotate and extract disease keywords, geonames, and dates and return
     a dictionary of the text and the annotations
 
     texts -- a list of texts (str)
-    raw -- returns a not preprocessed annotation (Default False)
+    entity_funcs -- list of tuples of function and bool for raw
     """
     if type(texts) == str:
         texts = [texts]
+    if type(entity_funcs) == tuple:
+        entity_funcs = [entity_funcs]
     database = {"texts": texts, "dates": [], "confirmed_cases": [], "keywords": [], "geonames": []}
     for i, text in enumerate(tqdm(texts)):
         doc = annotate(text)
-        for entity_func in entity_funcs:
+        for entity_func, raw in entity_funcs:
                 try:
                     entity, resolved = entity_func(doc, raw)
                     database[entity].append(resolved)
