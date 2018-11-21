@@ -25,7 +25,7 @@ def entity_tuple(entity_extractor):
 
     @wraps(entity_extractor)
     def decorate(doc, **kwargs):
-        resolved = entity_extractor(doc, kwargs)
+        resolved = entity_extractor(doc, **kwargs)
         entity = entity_extractor.__name__
         if type(resolved) != list:
             resolved = [resolved]
@@ -67,36 +67,55 @@ def geonames(doc, raw=False):
 
 
 @entity_tuple
-def keywords(doc, raw=False):
+def keywords(doc, raw=False, with_label=False):
     """Returns the most occurring disease entity in a annotated document
 
     :param doc: an annotated string
     :param raw: returns a not preprocessed annotation (Default False)
+    :param with_label: returns a resolved keyword as dict with ontology id and label (Default False)
     :return:
     """
     keyword_spans = doc.tiers["resolved_keywords"].spans
     if raw:
-        return [keyword_spans[i].resolutions[0]['entity']['label']
-                for i in range(len(keyword_spans))
-                if keyword_spans[i].resolutions['entity']['type'] == 'disease']
+        if not with_label:
+            return [keyword_spans[i].resolutions[0]['entity']['label']
+                    for i in range(len(keyword_spans))
+                    if keyword_spans[i].resolutions[0]['entity']['type'] == 'disease']
+        else:
+            return [keyword_spans[i].resolutions[0]['entity'] for i in range(len(keyword_spans))]
 
     else:
-        keywords = [(keyword_spans[i].resolutions[0]['entity']['label'], keyword_spans[i].resolutions[0]["weight"])
-                    for i in range(len(keyword_spans))
-                    if keyword_spans[i].resolutions[0]['entity']['type']
-                    == 'disease']
-
-        # Ignores the included weights and only considers the most occurring disease name
-        keywords_without_weight = [disease[0] for disease in keywords]
-        keyword_counts = [(key, len(list(group))) for key, group in groupby(sorted(keywords_without_weight))]
-        try:
-            keyword = max(keyword_counts, key=lambda x: x[1])
-        except ValueError:
-            keyword = np.nan
-        if type(keyword) is float:
-            return keyword
+        if not with_label:
+            keywords = [(keyword_spans[i].resolutions[0]['entity']['label'], keyword_spans[i].resolutions[0]["weight"])
+                        for i in range(len(keyword_spans))
+                        if keyword_spans[i].resolutions[0]['entity']['type']
+                        == 'disease']
+            # Ignores the included weights and only considers the most occurring disease name
+            keywords_without_weight = [disease[0] for disease in keywords]
+            keyword_counts = [(key, len(list(group))) for key, group in groupby(sorted(keywords_without_weight))]
+            try:
+                keyword = max(keyword_counts, key=lambda x: x[1])
+            except ValueError:
+                keyword = np.nan
+            if type(keyword) == float:
+                return keyword
+            else:
+                return keyword[0]  # Only returns the keyword, not the weight
         else:
-            return keyword[0]  # Only returns the keyword, not the weight
+            keywords = [keyword_spans[i].resolutions[0]['entity'] for i in range(len(keyword_spans))
+                        if keyword_spans[i].resolutions[0]['entity']['type']
+                        == 'disease']
+            keyword_counts = [(key, len(list(group))) for key, group in groupby(keywords)]
+            try:
+                keyword = max(keyword_counts, key=lambda x:x[1])
+            except ValueError:
+                keyword = np.nan
+            if type(keyword) == dict:
+                return keyword
+            else:
+                return keyword[0]
+
+
 
 
 @entity_tuple
@@ -139,25 +158,31 @@ def dates(doc, raw=False):
 
 
 # Run this shit (a.k.a annotate all the scraped WHO DONs)
-def create_annotated_database(texts, entity_funcs):
-    # TODO: create a dict, to specifically set raw for different annotators
+def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, dates, keywords]):
+    # TODO: Maybe add a cleaner function for inputted text.
     """Given a list of texts (str) annotate and extract disease keywords, geonames, and dates and return
     a dictionary of the text and the annotations
 
     texts -- a list of texts (str)
-    entity_funcs -- list of tuples of function and bool for raw
+    entity_funcs -- list of tuples of function and kwargs
     """
     if type(texts) == str:
         texts = [texts]
-    if type(entity_funcs) == tuple:
-        entity_funcs = [entity_funcs]
-    database = {"texts": texts, "dates": [], "confirmed_cases": [], "keywords": [], "geonames": []}
+    if type(entity_funcs_and_params) != list:
+        entity_funcs_and_params = [entity_funcs_and_params]
+
+    # Convert all the non tuples with functions only into tuples
+    entity_funcs_and_params = [(should_be_tuple, {}) if callable(should_be_tuple) else should_be_tuple
+                               for should_be_tuple in entity_funcs_and_params]
+    database = {"texts": texts, "dates": [], "cases": [], "keywords": [], "geonames": []}
     for i, text in enumerate(tqdm(texts)):
-        doc = annotate(text)
-        for entity_func, raw in entity_funcs:
-                try:
-                    entity, resolved = entity_func(doc, raw)
-                    database[entity].append(resolved)
-                except TypeError as e:
-                    print("Type error in text({})".format(i) + ": " + str(e))
+        doc = annotate(text.replace("\n", " "))
+        for func_and_param in entity_funcs_and_params:
+            entity_func = func_and_param[0]
+            kwargs = func_and_param[1]
+            try:
+                entity, resolved = entity_func(doc, **kwargs)
+                database[entity].append(resolved)
+            except TypeError as e:
+                print("Type error in text({})".format(i) + ": " + str(e))
     return database
