@@ -78,3 +78,4 @@ assert database == {'dates': [], 'cases': [], 'keywords': [
     [{'id': 'http://purl.obolibrary.org/obo/DOID_4325', 'label': 'Ebola hemorrhagic fever', 'type': 'disease'}]],
                     'geonames': [['Republic of Uganda', 'South Sudan']]}
 print("...database creation testing complete.")
+print("Testing annotator is completed.")
