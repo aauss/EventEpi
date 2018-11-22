@@ -1,55 +1,59 @@
+"""This python file should contain, if possible, function that are passed to pandas' apply function to clean
+ the Ereignisdatenbank"""
+
+
 import re
-import pandas as pd
+import warnings
 from datetime import datetime
 from wiki_country_parser import get_wiki_countries_df
 
 
-def edb_to_timestamp(dates):
+def edb_to_timestamp(date):
     """Transforms a list of unconverted string to timestamp"""
 
-    if type(dates) == str:
-        dates = [dates]
+    date = str(date)
+    date = date.replace('.', ' ')
+    if re.match(r"\d\d\W\d\d\W\d\d\d\d", date) and "-" not in date:
+        try:
+            date = datetime.strptime(date, '%d %m %Y').strftime("%Y-%m-%d")
+        except ValueError:
+            warnings.warn('"{}" is not an existing date. Please change it'.format(date))
+    return date
 
-    dates = [str(date).replace('.', ' ') for date in dates]
-    dates = list(map(lambda x: datetime.strptime(x, '%d %m %Y').strftime("%Y-%m-%d")
-    if re.match(r"\d\d\.\d\d\.\d\d\d\d", x) and "-" not in x else x))
-    return dates
 
-
-def clean_country_names(countries):
+def clean_country_names(country):
     """Takes a list of countries (from Ereginsdatenbank) and returns a set of cleaned country names"""
 
+    country = str(country).strip(" ")
     card_dir = re.compile(r"(Süd|Nord|West|Ost)\s(\S*)")  # Matches cardinal directions and the string after it
-    countries_unique = list(set(countries))  # Optional. Used for better overview and faster calculation
 
     # Because someone used new lines in entries instead of comma to list countries
-    countries_unique = list(map(lambda x: re.sub(r'\n', ', ', x), countries_unique))
+    country = re.sub(r'\n', ', ', country)
 
     # Because the line above adds one comma to much
-    countries_unique = list(map(lambda x: re.sub(r',,', ',', x), countries_unique))
-    countries_unique = list(map(lambda x: re.sub(r'\(.*\)', "", x).strip(" "), countries_unique))
-    countries_unique = list(map(lambda x: x.replace("&", "und"), countries_unique))
-    countries_unique = list(
-        map(lambda x: x.split(",") if "," in x else x, countries_unique))  # For entries with more than one country
-    countries_unique = list(map(lambda x: x.replace("_", " ") if type(x) != list else x, countries_unique))
-
-    # To transform Süd Sudan to Südsudan
-    try:
-        countries_unique = list(map(lambda x: card_dir.match(x)[1] + card_dir.match(x)[2].lower()
-                                    if type(x) != list and card_dir.match(x) else x, countries_unique))
-    except IndexError:
-        print(card_dir.match, " has a cardinal direction but is not of the form 'Süd Sudan'")
-
-    # "Recursively" clean lists
-    countries_unique = list(map(lambda x: clean_country_names(x) if type(x) == list else x, countries_unique))
-    return countries_unique
+    country = re.sub(r',,', ',', country)
+    country = re.sub(r'\(.*\)', "", country)
+    country.replace("&", "und")
+    if "," in country:
+        country.split(",")
+    if type(country) != list:
+        country.replace("_", " ")
+    if type(country) != list and card_dir.match(country):
+        try:
+            country = card_dir.match(country)[1] + card_dir.match(country)[2].lower()
+        except IndexError:
+            print(card_dir.match, " has a cardinal direction but is not of the form 'Süd Sudan'")
+    return country
 
 
-def translate_abbreviation(to_translate):
+def translate_abbreviation(to_translate, clean=False):
     """Takes a list of countries and/or abbreviations and translates the abbreviations to the full state name"""
+
     wikipedia_country_list = get_wiki_countries_df()
     to_return = []
-    if type(to_translate) == str:
+    if clean:
+        to_translate = clean_country_names(to_translate)
+    if to_translate != list:
         to_translate = [to_translate]
     for potential_abbreviation in to_translate:
         if type(potential_abbreviation) == str and not re.findall(r"([^A-Z]+)", potential_abbreviation):
@@ -59,6 +63,7 @@ def translate_abbreviation(to_translate):
                 for i, abbreviation in enumerate(wikipedia_country_list[column]):
                     if potential_abbreviation in abbreviation:
                         to_return.append(wikipedia_country_list["state_name_de"].tolist()[i])
+
         elif type(potential_abbreviation) == list:
             list_entry = [translate_abbreviation(nested_entry) for nested_entry in potential_abbreviation]
             flattened = [entry for sublist in list_entry for entry in sublist]
