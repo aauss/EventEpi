@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 def scrape_wiki_countries():
     """Scrapes German Wikipedia article of list of states of the earth and returns dict with entries."""
+
     req = requests.get("https://de.wikipedia.org/wiki/Liste_der_Staaten_der_Erde")
     soup = BeautifulSoup(req.content, "html.parser")
 
@@ -61,7 +62,7 @@ def abbreviate_country(country_name):
 
     Example: United Kingdom --> UK
     """
-    country_name = re.sub(r"\(.*\)", "", country_name)  # Delete content in paranthesis since not relevant for abbrev.
+    country_name = re.sub(r"\(.*\)", "", country_name)  # Delete content in parenthesis since not relevant for abbrev.
     if "," in country_name:
         # If there is a comma, switch order to yield a more common abbreviation: Korea, Nord --> Nord Korea
         matched = re.match(r"([A-Za-z]*), (.*)", country_name)  # Extract capital letters
@@ -72,26 +73,25 @@ def abbreviate_country(country_name):
     return abbreviation
 
 
-def abbreviate_df(wikipedia_country_df):
+def abbreviate_df(wikipedia_country_df, columns=["state_name_de", "full_state_name_de", "translation_state_name"]):
     """Search for names that might have abbreviations. If they consist of two or more words that start with a capital
     letter, it makes an abbreviation out of it
     """
-    abb_state_de = list(map(abbreviate_country, wikipedia_country_df["state_name_de"].tolist()))
-    abb_full_state_de = list(map(abbreviate_country, wikipedia_country_df["full_state_name_de"].tolist()))
-    abb_state_trans = list(map(abbreviate_country, wikipedia_country_df["translation_state_name"].tolist()))
 
-    abbreviations = [list(a) for a in zip(abb_state_de, abb_full_state_de, abb_state_trans)]
+    abbreviations = [list(map(abbreviate_country, wikipedia_country_df[column].tolist())) for column in columns]
+    abbreviations = [list(a) for a in zip(*abbreviations)]
     abbreviations = [list(filter(None, abb)) for abb in abbreviations if str(abb) != 'None']  # Removes Nones
-    abbreviations = list(map(lambda x: list(set(x)) if len(x) > 0 else "-", abbreviations))  # Removes redundance
+    abbreviations = list(map(lambda x: list(set(x)) if len(x) > 0 else "-", abbreviations))  # Removes redundancy
     wikipedia_country_df["inoff_abbreviations"] = abbreviations
     return wikipedia_country_df
 
 
 def get_wiki_countries_df():
-    if os.path.exists("wiki_countries_df.p"):
-        wiki_countries_df = pickle.load(open("wiki_countries_df.p", "rb"))
+    pickle_path = os.path.join("pickles", "wiki_countries_df.p")
+    if os.path.exists(pickle_path):
+        wiki_countries_df = pickle.load(open(pickle_path, "rb"))
     else:
         wiki_countries_df = scrape_wiki_countries()
         wiki_countries_df = abbreviate_df(wiki_countries_df)
-        pickle.dump(wiki_countries_df, open("wiki_countries_df.p", "wb"))
+        pickle.dump(wiki_countries_df, open(pickle_path, "wb"))
     return wiki_countries_df
