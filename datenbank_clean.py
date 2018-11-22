@@ -3,26 +3,22 @@ import pandas as pd
 from datetime import datetime
 from wiki_country_parser import get_wiki_countries_df
 
-def edb_to_timestamp(pd_data):
-    """Transforms an unconverted string in pandas DataFrame or Series of Ereignisdatenbank (edb) to timestamp"""
 
-    if type(pd_data) == pd.DataFrame:
-        for column in pd_data:
-            pd_data[column] = pd_data[column].astype(str)
-            pd_data[column] = pd_data[column].str.replace('.', ' ')
-            pd_data[column] = pd_data[column].apply(lambda x: datetime.strptime(x, '%d %m %Y').strftime("%Y-%m-%d")
-                                                    if re.match(r"\d\d\.\d\d\.\d\d\d\d", x) and "-" not in x else x)
-        return pd_data
-    elif type(pd_data) == pd.Series:
-        pd_data = pd_data.astype(str)
-        pd_data = pd_data.str.replace('.', ' ')
-        pd_data = pd_data.apply(lambda x: datetime.strptime(x, '%d %m %Y').strftime("%Y-%m-%d")
-                                if re.match(r"\d\d\.\d\d\.\d\d\d\d", x) and "-" not in x else x)
-        return pd_data
+def edb_to_timestamp(dates):
+    """Transforms a list of unconverted string to timestamp"""
+
+    if type(dates) == str:
+        dates = [dates]
+
+    dates = [str(date).replace('.', ' ') for date in dates]
+    dates = list(map(lambda x: datetime.strptime(x, '%d %m %Y').strftime("%Y-%m-%d")
+    if re.match(r"\d\d\.\d\d\.\d\d\d\d", x) and "-" not in x else x))
+    return dates
 
 
 def clean_country_names(countries):
     """Takes a list of countries (from Ereginsdatenbank) and returns a set of cleaned country names"""
+
     card_dir = re.compile(r"(Süd|Nord|West|Ost)\s(\S*)")  # Matches cardinal directions and the string after it
     countries_unique = list(set(countries))  # Optional. Used for better overview and faster calculation
 
