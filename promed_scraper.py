@@ -21,6 +21,7 @@ proxies = {
 }
 
 import requests
+import re
 get_request = requests.get('https://www.promedmail.org/ajax/runSearch.php?kwby1=summary&search=&date1=02/01/2018&date2=10/24/2018&feed_id=1', proxies = proxies)
 content = get_request.content
 ids = re.findall(r"id\d+", content)
