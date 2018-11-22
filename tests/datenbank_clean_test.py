@@ -15,4 +15,3 @@ assert deep_eq(sorted(flatten_list(example_countries_to_clean.apply(clean_countr
                sorted(flatten_list(expected_countries_to_clean))), "Cleaning country names failed"
 print("...testing cleaning country names completed.")
 print("Testing Ereignisdatenbank cleaning completed.")
-#print(clean_country_names(example_countries_to_clean))

@@ -1,7 +1,6 @@
 """This python file should contain, if possible, function that are passed to pandas' apply function to clean
  the Ereignisdatenbank"""
 
-
 import re
 import warnings
 from datetime import datetime
@@ -22,39 +21,37 @@ def edb_to_timestamp(date):
 
 
 def clean_country_names(country):
-    """Takes a list of countries (from Ereginsdatenbank) and returns a set of cleaned country names"""
+    """Takes a list of countries (from Ereignisdatenbank) and returns a set of cleaned country names"""
 
-    country = str(country).strip(" ")
+    country = str(country)
     card_dir = re.compile(r"(Süd|Nord|West|Ost)\s(\S*)")  # Matches cardinal directions and the string after it
-
-    # Because someone used new lines in entries instead of comma to list countries
+    country = str(country).strip(" ")
     country = re.sub(r'\n', ', ', country)
-
-    # Because the line above adds one comma to much
-    country = re.sub(r',,', ',', country)
+    country = re.sub(r',,', ',', country)  # Because the line above adds one comma to much
     country = re.sub(r'\(.*\)', "", country)
-    country.replace("&", "und")
-    if "," in country:
-        country.split(",")
-    if type(country) != list:
-        country.replace("_", " ")
-    if type(country) != list and card_dir.match(country):
+    country = country.replace("&", "und")
+    country = country.replace("_", " ")
+    if card_dir.match(country):
         try:
             country = card_dir.match(country)[1] + card_dir.match(country)[2].lower()
         except IndexError:
             print(card_dir.match, " has a cardinal direction but is not of the form 'Süd Sudan'")
-    return country
+    if "," in country:
+        return [clean_country_names(entry) for entry in country.split(",")]
+    else:
+        return country
 
 
-def translate_abbreviation(to_translate, clean=False):
-    """Takes a list of countries and/or abbreviations and translates the abbreviations to the full state name"""
+def translate_abbreviation(to_translate, to_clean=True):
+    # TODO: Continue here after weekendgi
+    """Takes a string or a list of countries and/or abbreviations and translates it to the full state name"""
 
     wikipedia_country_list = get_wiki_countries_df()
     to_return = []
-    if clean:
-        to_translate = clean_country_names(to_translate)
     if to_translate != list:
         to_translate = [to_translate]
+    if to_clean and type(to):
+        to_translate = [clean_country_names(entry) for entry in to_translate]
     for potential_abbreviation in to_translate:
         if type(potential_abbreviation) == str and not re.findall(r"([^A-Z]+)", potential_abbreviation):
 
