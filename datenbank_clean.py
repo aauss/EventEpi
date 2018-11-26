@@ -3,12 +3,14 @@
 
 import re
 import warnings
+import pandas as pd
+from didyoumean import didyoumean
 from datetime import datetime
 from wiki_country_parser import get_wiki_countries_df
 
 
 def edb_to_timestamp(date):
-    """Transforms a list of unconverted string to timestamp"""
+    """Transforms an unconverted string of a date to a timestamp"""
 
     date = str(date)
     date = date.replace('.', ' ')
@@ -20,8 +22,16 @@ def edb_to_timestamp(date):
     return date
 
 
-def clean_country_names(country):
-    """Takes a list of countries (from Ereignisdatenbank) and returns a set of cleaned country names"""
+def clean_country_name(country):
+    """
+
+    Args:
+        country:
+
+    Returns:
+
+    """
+    """Takes a string of a country/ies (from Ereignisdatenbank) and returns cleaned country names"""
 
     country = str(country)
     card_dir = re.compile(r"(Süd|Nord|West|Ost)\s(\S*)")  # Matches cardinal directions and the string after it
@@ -37,34 +47,79 @@ def clean_country_names(country):
         except IndexError:
             print(card_dir.match, " has a cardinal direction but is not of the form 'Süd Sudan'")
     if "," in country:
-        return [clean_country_names(entry) for entry in country.split(",")]
+        return [clean_country_name(entry) for entry in country.split(",")]  # make a list out of many countr. entries
     else:
         return country
 
 
-def translate_abbreviation(to_translate, to_clean=True):
-    # TODO: Continue here after weekendgi
+def translate_abbreviation(to_translate, to_clean=True, look_up=get_wiki_countries_df()):
+    # TODO: Continue here after weekend
     """Takes a string or a list of countries and/or abbreviations and translates it to the full state name"""
+    if isinstance(look_up, pd.DataFrame):
+        wiki_countries_df = look_up
+    else:
+        wiki_countries_df = get_wiki_countries_df()
+    if to_clean:
+        if isinstance(to_translate, str):
+            to_translate = clean_country_name(to_translate)
+        elif isinstance(to_translate, list):
+            to_translate = [clean_country_name(country) for country in to_translate]
+    if isinstance(to_translate, str) and not re.findall(r"([^A-Z]+)", to_translate):
+        for column in ["wiki_abbreviations", "inoff_abbreviations"]:
+            for i, abbreviation in enumerate(wiki_countries_df[column]):
+                if to_translate in abbreviation:
+                    return wiki_countries_df["state_name_de"].tolist()[i]
+                    break
+    if type(to_translate) == list:
+        return [translate_abbreviation(country) for country in to_translate]
+    else:
+        return to_translate
 
-    wikipedia_country_list = get_wiki_countries_df()
-    to_return = []
-    if to_translate != list:
-        to_translate = [to_translate]
-    if to_clean and type(to):
-        to_translate = [clean_country_names(entry) for entry in to_translate]
-    for potential_abbreviation in to_translate:
-        if type(potential_abbreviation) == str and not re.findall(r"([^A-Z]+)", potential_abbreviation):
 
-            # First check the official abrev. than the self created ones e.g. VAE for the Emirates
-            for column in ["wiki_abbreviations", "inoff_abbreviations"]:
-                for i, abbreviation in enumerate(wikipedia_country_list[column]):
-                    if potential_abbreviation in abbreviation:
-                        to_return.append(wikipedia_country_list["state_name_de"].tolist()[i])
-
-        elif type(potential_abbreviation) == list:
-            list_entry = [translate_abbreviation(nested_entry) for nested_entry in potential_abbreviation]
-            flattened = [entry for sublist in list_entry for entry in sublist]
-            to_return.append(flattened)
+def match_country(country, look_up, translation):
+    escaped = re.escape(country)
+    found = list(filter(lambda x: re.findall(escaped, x), look_up))
+    if len(found) == 1:
+        return translation[look_up.index(found[0])]
+    elif len(found) > 1:
+        # Check if identity in ambiguous e.g Niger --> (Niger, Nigeria)
+        identical = [found_name for found_name in found if found_name == country]
+        if len(identical) == 1:
+            return translation[look_up.index(identical[0])]
         else:
-            to_return.append(potential_abbreviation)
-    return to_return
+            return [translation[look_up.index(similar)] for similar in found]
+
+
+def translate(to_translate, look_up=get_wiki_countries_df()):
+    if isinstance(look_up, pd.DataFrame):
+        wiki_countries_df = look_up
+    else:
+        wiki_countries_df = get_wiki_countries_df()
+
+    continents = ["europa", "africa", "america", "australien", "asia"]
+    state_name_de = wiki_countries_df["state_name_de"].tolist()
+    full_state_name_de = wiki_countries_df["full_state_name_de"].tolist()
+    translation = wiki_countries_df["translation_state_name"].tolist()
+    match = None
+
+    if isinstance(to_translate, str):
+        match = match_country(to_translate, state_name_de, translation)
+        if not match:
+            match = match_country(to_translate, full_state_name_de, translation)
+        if not match:
+            match = match_country(to_translate, translation, translation)
+        # If still no match
+        if not match:
+            did_u_mean = didyoumean.didYouMean(to_translate, state_name_de)
+            if did_u_mean and (did_u_mean not in continents):
+                match = translate(did_u_mean)
+            else:
+                match = to_translate
+    elif isinstance(to_translate, list):
+        match = [translate(country) for country in to_translate]
+    return match
+
+example_to_translate = ["Deutschland", "Delaware", ["Kongo", "China"], "Niger"]
+
+
+
