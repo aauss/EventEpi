@@ -1,5 +1,5 @@
 import pandas as pd
-from tqdm import tqdm
+from tqdm import tqdm_notebook as tqdm
 from boilerpipe.extract import Extractor
 from edb_clean import *
 
@@ -27,14 +27,21 @@ def extract_from_url(list_of_links):
     return[Extractor(extractor='ArticleExtractor', url=url).getText().replace('\n', '') for url in tqdm(list_of_links)]
 
 
-def get_edb():
+def get_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]), (translate, [3, 4])]):
     """
 
     Returns:
         pd.DataFrame: formatted edb
     """
+    if not isinstance(clean, list):
+        clean = [clean]
     edb = pd.read_csv("edb.csv", sep=";")
     edb = edb.dropna(how="all").reset_index(drop=True)
     edb.columns = list(map(lambda x: x.strip(" "), edb.columns))
-    edb
+    for funct, columns in clean:
+        edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
     return edb
+
+
+
+
