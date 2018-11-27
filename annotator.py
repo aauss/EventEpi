@@ -6,7 +6,7 @@ from epitator.resolved_keyword_annotator import ResolvedKeywordAnnotator
 from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 from itertools import groupby
-from tqdm import tqdm
+from tqdm import tqdm_notebook as tqdm
 from typing import NamedTuple
 from functools import wraps
 
@@ -177,9 +177,9 @@ def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, d
     database = {"texts": texts, "dates": [], "cases": [], "keywords": [], "geonames": []}
     for i, text in enumerate(tqdm(texts)):
         doc = annotate(text.replace("\n", " "))
-        for func_and_param in entity_funcs_and_params:
-            entity_func = func_and_param[0]
-            kwargs = func_and_param[1]
+        for entity_func, kwargs in entity_funcs_and_params:
+            # entity_func = func_and_param[0]
+            # kwargs = func_and_param[1]
             try:
                 entity, resolved = entity_func(doc, **kwargs)
                 database[entity].append(resolved)
