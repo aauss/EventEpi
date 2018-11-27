@@ -18,7 +18,7 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #THE SOFTWARE.
 
-import datetime, time, functools, operator, types
+import datetime, time, functools, operator
 
 default_fudge = datetime.timedelta(seconds=0, microseconds=0, days=0)
 
