@@ -88,14 +88,16 @@ def abbreviate_df(wikipedia_country_df, columns=["state_name_de", "full_state_na
 
 
 def get_wiki_countries_df():
-    # TODO: Find a way that script path always works
+    # TODO: Find a way that script path always works for tests and outside
     # scripts_path = inspect.getfile(inspect.currentframe())
-    pickle_path = os.path.join( "..", "pickles", "wiki_countries_df.pkl")
+    pickle_path = os.path.join("pickles", "wiki_countries_df.pkl")
     if os.path.exists(pickle_path):
         wiki_countries_df = pickle.load(open(pickle_path, "rb"))
     else:
+        print("Pickle not found. Start scraping..")
         wiki_countries_df = scrape_wiki_countries()
         wiki_countries_df = abbreviate_df(wiki_countries_df)
+        print("...scraping complete.")
         try:
             pickle.dump(wiki_countries_df, open(pickle_path, "wb"))
         except FileNotFoundError:
