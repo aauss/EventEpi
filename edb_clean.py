@@ -9,7 +9,7 @@ from datetime import datetime
 from wiki_country_parser import get_wiki_countries_df
 
 
-def _zero_add(x):
+def _add_zero(x):
     """Adds a zero if day or month only have a single value
 
     Args:
@@ -29,14 +29,14 @@ def edb_to_timestamp(date):
     date = str(date)
     date_matched = re.match(r"(\d{1,2})\D(\d{1,2})\D(\d{4})", date)
     if date_matched and "-" not in date:
-        day = _zero_add(date_matched[1])
-        month = _zero_add(date_matched[2])
+        day = _add_zero(date_matched[1])
+        month = _add_zero(date_matched[2])
         year = date_matched[3]
         try:
             date_try_format = day + " " + month + " " + year
             date = datetime.strptime(date_try_format, '%d %m %Y').strftime("%Y-%m-%d")
         except ValueError:
-            warnings.warn('"{}" is not an existing date. Please change it'.format(date))
+            warnings.warn('"{}" is not an existing date. Please change it'.format(date), stacklevel=2)
     return date
 
 
