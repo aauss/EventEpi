@@ -178,8 +178,6 @@ def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, d
     for i, text in enumerate(tqdm(texts)):
         doc = annotate(text.replace("\n", " "))
         for entity_func, kwargs in entity_funcs_and_params:
-            # entity_func = func_and_param[0]
-            # kwargs = func_and_param[1]
             try:
                 entity, resolved = entity_func(doc, **kwargs)
                 database[entity].append(resolved)
