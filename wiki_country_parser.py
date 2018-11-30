@@ -7,6 +7,23 @@ import inspect
 from bs4 import BeautifulSoup
 
 
+def format_country_with_comma_and_parathesis(country_name):
+    """
+    Formats such that Congo, Republik of (Brazzaville) --> Republik of Congo
+    Returns:
+        formatted country name
+    """
+    country_name = re.sub(r"\(.*\)", "", country_name)  # Delete content in parenthesis since not relevant here
+    if "," in country_name:
+        # If there is a comma, switch order to yield a more common abbreviation: Korea, Nord --> Nord Korea
+        matched = re.match(r"([A-Za-z]*), (.*)", country_name)  # Extract capital letters
+        try:
+            country_name = matched[2] + " " + matched[1]  # Patch capital letters together
+        except TypeError:
+            print(country_name)
+    return country_name
+
+
 def scrape_wiki_countries():
     """Scrapes German Wikipedia article of list of states of the earth and returns dict with entries."""
 
@@ -29,17 +46,27 @@ def scrape_wiki_countries():
     regex = re.compile(r"\[\d*\]")  # To remove footnotes in the names
     for i in range(amount_countries):
         try:
+            # state_name_de
             state_name_de = regex.sub("", parsed_soup[i][0].text.replace("\n", "")
                                       .replace("\xad", ""))  # Remove soft hyphen used in "Zentralafr. Rep".
-
-            # Remove additional information that are note the state name
             state_name_de = re.sub(r"((mit)|(ohne)).*", "", state_name_de)
+            state_name_de = format_country_with_comma_and_parathesis(state_name_de)
+            # Remove additional information that are note the state name
+
             wiki_dict["state_name_de"].append(state_name_de)
 
-            # Removes new lines
-            wiki_dict["full_state_name_de"].append(regex.sub("", parsed_soup[i][1].text).replace("\n", ""))
+            # full_state_name_de
+            full_state_name_de = regex.sub("", parsed_soup[i][1].text).replace("\n", "")
+            full_state_name_de = format_country_with_comma_and_parathesis(full_state_name_de)
+            wiki_dict["full_state_name_de"].append(full_state_name_de)
+
+            # capital_de
             wiki_dict["capital_de"].append(regex.sub("", parsed_soup[i][2].text).replace("\n", ""))
-            wiki_dict["translation_state_name"].append(regex.sub("", parsed_soup[i][10].text).replace("\n", ""))
+
+            # translation_state_name
+            translation_state_name = regex.sub("", parsed_soup[i][10].text).replace("\n", "")
+            translation_state_name = format_country_with_comma_and_parathesis(translation_state_name)
+            wiki_dict["translation_state_name"].append(translation_state_name)
 
             # Also removes new lines. Column 7 and 8 are long and short official abbreviations for the countries
             list_abbreviation = [parsed_soup[i][7].text.replace("\n", ""), parsed_soup[i][8].text.replace("\n", "")]
@@ -63,11 +90,6 @@ def abbreviate_country(country_name):
 
     Example: United Kingdom --> UK
     """
-    country_name = re.sub(r"\(.*\)", "", country_name)  # Delete content in parenthesis since not relevant for abbrev.
-    if "," in country_name:
-        # If there is a comma, switch order to yield a more common abbreviation: Korea, Nord --> Nord Korea
-        matched = re.match(r"([A-Za-z]*), (.*)", country_name)  # Extract capital letters
-        country_name = matched[2] + " " + matched[1]  # Patch capital letters together
     abbreviation = None
     if len(re.findall(r"([A-Z|Ä|Ö|Ü])", country_name)) > 1:
         abbreviation = "".join(re.findall(r"([A-Z|Ä|Ö|Ü])", country_name))
