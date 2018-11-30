@@ -1,4 +1,6 @@
 import requests
+import os
+import pickle
 from bs4 import BeautifulSoup
 
 
@@ -41,17 +43,21 @@ def get_links_per_year(years_links, list_of_months=None, proxies={'http': 'http:
     return all_links
 
 
-headers = {
-    'User-Agent': 'Auss Abbood, www.rki.de',
-    'From': 'abbooda@rki.de'
-}
+def load_params():
+    path = os.path.join("pickles", "scraping_params.p")
+    return pickle.load(open(path, "rb"))
 
 
 def scrape(years=None,
            months=None,
            num_last_reports=None,
            headers=None,
-           proxies={'http': 'http://fw-bln.rki.local:8020'}):
+           proxies=None,
+           use_pickle=False):
+    if use_pickle:
+        headers = load_params()["headers"]
+        proxies = load_params()["proxies"]
+
     """Scrapes the WHO DONs using the WHO DON scraping functions and returns the links to these DONs
 
     years -- a list of strings of years in the format YYYY to be scraped
@@ -59,7 +65,7 @@ def scrape(years=None,
     num_list_reports -- an integer to specify how many of the last reports should be scraped.
     can be combined with the specification of year and/or month
     headers -- use a header for scraping
-    proxies -- the proxy to use while scraping (default {'http': 'http://fw-bln.rki.local:8020'})
+    proxies -- the proxy to use while scraping 
     """
     years = get_links_by_year(list_of_years=years, proxies=proxies)
     all_links = get_links_per_year(years, list_of_months=months, proxies=proxies)
