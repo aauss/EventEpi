@@ -36,7 +36,7 @@ def edb_to_timestamp(date):
             date_try_format = day + " " + month + " " + year
             date = datetime.strptime(date_try_format, '%d %m %Y').strftime("%Y-%m-%d")
         except ValueError:
-            warnings.warn('"{}" is not an existing date. Please change it'.format(date), stacklevel=2)
+            warnings.warn('"{}" is not an existing date. Please change it'.format(date))
     return date
 
 
@@ -60,14 +60,15 @@ def clean_country_name(country):
         country = country.replace("_", " ")
         if card_dir.match(country):
             try:
-                country = card_dir.match(country)[1] + card_dir.match(country)[2].lower()
+                if "korea" not in country.lower():
+                    country = card_dir.match(country)[1] + card_dir.match(country)[2].lower()
             except IndexError:
                 print(card_dir.match, " has a cardinal direction but is not of the form 'Süd Sudan'")
         if "," in country:
             return [clean_country_name(entry) for entry in country.split(",")]  # make a list out of many countr. entries
         else:
             return country
-    elif isinstance(country,list):
+    elif isinstance(country, list):
         return [clean_country_name(entry) for entry in country]
 
 
@@ -124,13 +125,16 @@ def translate(to_translate, look_up=get_wiki_countries_df()):
         match = _match_country(to_translate, state_name_de, translation)
         if not match:
             match = _match_country(to_translate, full_state_name_de, translation)
-        if not match:
+        elif not match:
             match = _match_country(to_translate, translation, translation)
         # If still no match
         if not match:
             did_u_mean = didyoumean.didYouMean(to_translate, state_name_de)
             if did_u_mean and (did_u_mean.lower() not in continents):
-                match = translate(did_u_mean)
+                try:
+                    match = translate(did_u_mean)
+                except RecursionError:
+                    print(did_u_mean, "caused recursion error")
             else:
                 match = to_translate
     elif isinstance(to_translate, list):
