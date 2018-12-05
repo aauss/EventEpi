@@ -26,7 +26,7 @@ def test_translate_abbreviations():
 def test_translation():
     example_to_translate = ["Deutschland", "Delaware", ["Kongo", "China"], "Niger"]
     expected_result_translate = ['Germany', 'Delaware',
-                                 [['Democratic Republic of the  Congo', 'Republic of  Congo'],
+                                 [['Democratic Republic of the Congo', 'Republic of Congo'],
                                   ['Taiwan oder Republic of China', 'China']], 'Niger']
     assert deep_eq(flatten_list([translate(example) for example in example_to_translate]),
                    flatten_list(expected_result_translate))
