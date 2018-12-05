@@ -3,7 +3,7 @@ import re
 import pickle
 import os
 import pandas as pd
-import inspect
+import sys
 from bs4 import BeautifulSoup
 
 
@@ -13,14 +13,20 @@ def format_country_with_comma_and_parathesis(country_name):
     Returns:
         formatted country name
     """
-    country_name = re.sub(r"\(.*\)", "", country_name)  # Delete content in parenthesis since not relevant here
+    country_name = re.sub(r"\(.*\)", " ", country_name)  # Delete content in parenthesis since not relevant here
     if "," in country_name:
         # If there is a comma, switch order to yield a more common abbreviation: Korea, Nord --> Nord Korea
         matched = re.match(r"([A-Za-z]*), (.*)", country_name)  # Extract capital letters
         try:
             country_name = matched[2] + " " + matched[1]  # Patch capital letters together
+
+            if country_name[0].islower():
+                country_name = [word.capitalize() if word.islower() else word
+                                for word in country_name.split(" ")]  # the Gambia -> The Gambia
+                country_name = " ".join(country_name)
         except TypeError:
-            print(country_name)
+            print(country_name, " could not be formatted by {}()".format(sys._getframe().f_code.co_name))
+    country_name = re.sub(r'(\s{2,})', ' ', country_name)  # The lines above sometimes includes unnecessary spaces
     return country_name
 
 
@@ -69,6 +75,7 @@ def scrape_wiki_countries():
             wiki_dict["translation_state_name"].append(translation_state_name)
 
             # Also removes new lines. Column 7 and 8 are long and short official abbreviations for the countries
+            # TODO: Take out references
             list_abbreviation = [parsed_soup[i][7].text.replace("\n", ""), parsed_soup[i][8].text.replace("\n", "")]
 
             # Remove empty abbrev. E.g. ["Abchasien", ["ABC", "-"], "Abkhazia"] --> ["Abchasien", ABC", "Abhkazia"]
@@ -100,7 +107,6 @@ def abbreviate_df(wikipedia_country_df, columns=["state_name_de", "full_state_na
     """Search for names that might have abbreviations. If they consist of two or more words that start with a capital
     letter, it makes an abbreviation out of it
     """
-
     abbreviations = [list(map(abbreviate_country, wikipedia_country_df[column].tolist())) for column in columns]
     abbreviations = [list(a) for a in zip(*abbreviations)]
     abbreviations = [list(filter(None, abb)) for abb in abbreviations if str(abb) != 'None']  # Removes Nones
@@ -109,11 +115,10 @@ def abbreviate_df(wikipedia_country_df, columns=["state_name_de", "full_state_na
     return wikipedia_country_df
 
 
-def get_wiki_countries_df():
-    # TODO: Find a way that script path always works for tests and outside
+def get_wiki_countries_df(use_pickle=True):
     # scripts_path = inspect.getfile(inspect.currentframe())
-    pickle_path = os.path.join("pickles", "wiki_countries_df.pkl")
-    if os.path.exists(pickle_path):
+    pickle_path = os.path.join("pickles", "wiki_countries_df.p")
+    if os.path.exists(pickle_path) and use_pickle:
         wiki_countries_df = pickle.load(open(pickle_path, "rb"))
     else:
         print("Pickle not found. Start scraping..")
