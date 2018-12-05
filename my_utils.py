@@ -17,6 +17,14 @@ def flatten_list(list_2d):
     return flattened
 
 
+def matching_elements(l1, l2):
+    if len(l1) >= len(l2):
+        matches = [i for i in l2 if i in l1]
+    else:
+        matches = [i for i in l1 if i in l2]
+    return matches
+
+
 def extract_from_url(list_of_links):
     """Extracts the main content from a list of links and returns a list of texts (str)
 
@@ -41,7 +49,3 @@ def get_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]), (translat
     for funct, columns in clean:
         edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
     return edb
-
-
-
-
