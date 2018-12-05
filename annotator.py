@@ -59,8 +59,8 @@ def geonames(doc, raw=False):
     if raw:
         return [geo_spans[i].geoname["name"] for i in range(len(geo_spans))]
     else:
-        geonames = [geo_spans[i].geoname["name"] for i in range(len(geo_spans))]
-        geoname_counts = [(key, len(list(group))) for key, group in groupby(sorted(geonames))]
+        geonames_ = [geo_spans[i].geoname["name"] for i in range(len(geo_spans))]
+        geoname_counts = [(key, len(list(group))) for key, group in groupby(sorted(geonames_))]
         geoname_ranking = sorted(geoname_counts, key=lambda x: x[1], reverse=True)
         geoname_most_occure = [geoname[0] for geoname in geoname_ranking if geoname[1] == geoname_ranking[0][1]]
         return geoname_most_occure
@@ -86,12 +86,11 @@ def keywords(doc, raw=False, with_label=False):
 
     else:
         if not with_label:
-            keywords = [(keyword_spans[i].resolutions[0]['entity']['label'], keyword_spans[i].resolutions[0]["weight"])
-                        for i in range(len(keyword_spans))
-                        if keyword_spans[i].resolutions[0]['entity']['type']
-                        == 'disease']
+            keywords_ = [(keyword_spans[i].resolutions[0]['entity']['label'], keyword_spans[i].resolutions[0]["weight"])
+                         for i in range(len(keyword_spans)) if keyword_spans[i].resolutions[0]['entity']['type']
+                         == 'disease']
             # Ignores the included weights and only considers the most occurring disease name
-            keywords_without_weight = [disease[0] for disease in keywords]
+            keywords_without_weight = [disease[0] for disease in keywords_]
             keyword_counts = [(key, len(list(group))) for key, group in groupby(sorted(keywords_without_weight))]
             try:
                 keyword = max(keyword_counts, key=lambda x: x[1])
@@ -102,20 +101,17 @@ def keywords(doc, raw=False, with_label=False):
             else:
                 return keyword[0]  # Only returns the keyword, not the weight
         else:
-            keywords = [keyword_spans[i].resolutions[0]['entity'] for i in range(len(keyword_spans))
-                        if keyword_spans[i].resolutions[0]['entity']['type']
-                        == 'disease']
-            keyword_counts = [(key, len(list(group))) for key, group in groupby(keywords)]
+            keywords_ = [keyword_spans[i].resolutions[0]['entity'] for i in range(len(keyword_spans))
+                         if keyword_spans[i].resolutions[0]['entity']['type'] == 'disease']
+            keyword_counts = [(key, len(list(group))) for key, group in groupby(keywords_)]
             try:
-                keyword = max(keyword_counts, key=lambda x:x[1])
+                keyword = max(keyword_counts, key=lambda x: x[1])
             except ValueError:
                 keyword = np.nan
             if type(keyword) == dict:
                 return keyword
             else:
                 return keyword[0]
-
-
 
 
 @entity_tuple
@@ -141,12 +137,12 @@ def dates(doc, raw=False):
     raw -- returns a not preprocessed annotation (Default False)
     """
     date_spans = doc.tiers["dates"].spans
-    dates = [date_spans[i].metadata["datetime_range"][0].strftime("%Y-%m-%d")
-             for i in range(len(date_spans))]
+    dates_ = [date_spans[i].metadata["datetime_range"][0].strftime("%Y-%m-%d")
+              for i in range(len(date_spans))]
     if raw:
-        return dates
+        return dates_
     else:
-        date_count_tuple = [(key, len(list(group))) for key, group in groupby(sorted(dates))]
+        date_count_tuple = [(key, len(list(group))) for key, group in groupby(sorted(dates_))]
         try:
             date = max(date_count_tuple, key=lambda x: x[1])
         except ValueError:
@@ -171,7 +167,7 @@ def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, d
     if type(entity_funcs_and_params) != list:
         entity_funcs_and_params = [entity_funcs_and_params]
 
-    # Convert all the non tuples with functions only into tuples
+    # Convert all the functions not in tuples into tuples with empty kwargs
     entity_funcs_and_params = [(should_be_tuple, {}) if callable(should_be_tuple) else should_be_tuple
                                for should_be_tuple in entity_funcs_and_params]
     database = {"texts": texts, "dates": [], "cases": [], "keywords": [], "geonames": []}
@@ -181,6 +177,6 @@ def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, d
             try:
                 entity, resolved = entity_func(doc, **kwargs)
                 database[entity].append(resolved)
-            except TypeError as e:
+            except ValueError as e:
                 print("Type error in text({})".format(i) + ": " + str(e))
     return database
