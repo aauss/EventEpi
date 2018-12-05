@@ -1,0 +1,12 @@
+EpiTator==1.2.2
+spacy==2.0.16
+didyoumean.py==1.0
+boilerpipe3==1.1
+pandas==0.23.4
+tqdm==4.28.1
+numpy==1.15.4
+requests==2.20.0
+boilerpipe==1.2.0.0
+beautifulsoup4==4.6.3
+didyoumean==1.0
+typing==3.6.6
