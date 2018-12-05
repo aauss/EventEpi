@@ -65,7 +65,7 @@ def clean_country_name(country):
             except IndexError:
                 print(card_dir.match, " has a cardinal direction but is not of the form 'Süd Sudan'")
         if "," in country:
-            return [clean_country_name(entry) for entry in country.split(",")]  # make a list out of many countr. entries
+            return [clean_country_name(entry) for entry in country.split(",")]
         else:
             return country
     elif isinstance(country, list):
