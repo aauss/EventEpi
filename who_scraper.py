@@ -54,10 +54,6 @@ def scrape(years=None,
            headers=None,
            proxies=None,
            use_pickle=False):
-    if use_pickle:
-        headers = load_params()["headers"]
-        proxies = load_params()["proxies"]
-
     """Scrapes the WHO DONs using the WHO DON scraping functions and returns the links to these DONs
 
     years -- a list of strings of years in the format YYYY to be scraped
@@ -65,8 +61,12 @@ def scrape(years=None,
     num_list_reports -- an integer to specify how many of the last reports should be scraped.
     can be combined with the specification of year and/or month
     headers -- use a header for scraping
-    proxies -- the proxy to use while scraping 
+    proxies -- the proxy to use while scraping
     """
+    if use_pickle:
+        headers = load_params()["headers"]
+        proxies = load_params()["proxies"]
+
     years = get_links_by_year(list_of_years=years, proxies=proxies)
     all_links = get_links_per_year(years, list_of_months=months, proxies=proxies)
     return all_links
