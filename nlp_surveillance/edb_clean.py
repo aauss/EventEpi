@@ -65,12 +65,21 @@ def translate_disease_name(disease):
     FILTER (lang(?itemLabel_EN) = "en").
     } order by ?item"""
     dirname = os.path.dirname(__file__)
-    path = os.path.join(dirname, 'pickles', 'disease_wikidata.p')
-    if not os.path.exists(path):
+    path_wiki = os.path.join(dirname, 'pickles', 'disease_wikidata.p')
+    if not os.path.exists(path_wiki):
         disease_translation_df = get_results_sparql(endpoint_url, query)
-        pickle.dump(disease_translation_df, open(path, 'wb'))
+        pickle.dump(disease_translation_df, open(path_wiki, 'wb'))
     else:
-        disease_translation_df = pickle.load(open(path, 'rb'))
+        disease_translation_df = pickle.load(open(path_wiki, 'rb'))
+
+    path_code = os.path.join(dirname, 'pickles', 'disease_code.p')
+    if not os.path.exists(path_code):
+        disease_code_df = pd.read_csv('diseaseCodes.csv', ';')
+        disease_code_df = disease_code_df[['Code', 'TypeName']]
+        pickle.dump(disease_code_df, open(path_code, 'wb'))
+    else:
+        disease_code_df = pickle.load(open(path_code, 'rb'))
+
     disease_db_en = disease_translation_df['itemLabel_EN']
     disease_db_de = [d for d in disease_translation_df['itemLabel_DE'] if isinstance(d, str)]
     disease_translation_df['itemLabel_DE'].tolist()[17:18]
