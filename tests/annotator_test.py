@@ -31,7 +31,7 @@ past week, alerts have been reported from South Sudan and Uganda; EVD has been r
  ongoing for the vaccination of health and frontline workers in Rwanda and South Sudan."""
 
 # Not explicitly testing the annotate function, since it only calls EpiTator, and if the object is created, it worked
-path = os.path.join("..", "pickles", "example_who_don_annotated.p")
+path = os.path.join("..", "nlp_surveillance", "pickles", "example_who_don_annotated.p")
 example_exists = os.path.exists(path)
 if not example_exists:
     print("Annotating example text...")
