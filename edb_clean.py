@@ -2,8 +2,11 @@
  the Ereignisdatenbank"""
 
 import re
+import os
 import warnings
+import pickle
 import pandas as pd
+from my_utils import get_results_sparql
 from didyoumean import didyoumean
 from datetime import datetime
 from wiki_country_parser import get_wiki_countries_df
@@ -40,6 +43,67 @@ def edb_to_timestamp(date):
     return date
 
 
+def _complete_partial_words(to_complete, list_of_possible_corrections_de, list_of_possible_corrections_en):
+    # Takes a list of correctly written en/ger disease names and tries to complete them: Ebola -> Ebolavirus
+    match = [s for s in list_of_possible_corrections_de if s.lower().startswith(to_complete.lower())]
+    if not match:
+        match = [s for s in list_of_possible_corrections_en if s.lower().startswith(to_complete.lower())]
+    if match:
+        return match[0]
+    else:
+        return to_complete
+
+
+def translate_disease_name(disease):
+    endpoint_url = "https://query.wikidata.org/sparql"
+    query = """SELECT Distinct ?item ?itemLabel_DE ?itemLabel_EN WHERE {
+    ?item wdt:P31 wd:Q12136.
+    OPTIONAL{
+    ?item rdfs:label ?itemLabel_DE.
+    FILTER (lang(?itemLabel_DE) = "de"). }
+    ?item rdfs:label ?itemLabel_EN.
+    FILTER (lang(?itemLabel_EN) = "en").
+    } order by ?item"""
+    dirname = os.path.dirname(__file__)
+    path = os.path.join(dirname, 'pickles', 'disease_wikidata.p')
+    if not os.path.exists(path):
+        disease_translation_df = get_results_sparql(endpoint_url, query)
+        pickle.dump(disease_translation_df, open(path, 'wb'))
+    else:
+        disease_translation_df = pickle.load(open(path, 'rb'))
+    disease_db_en = disease_translation_df['itemLabel_EN']
+    disease_db_de = [d for d in disease_translation_df['itemLabel_DE'] if isinstance(d, str)]
+    disease_translation_df['itemLabel_DE'].tolist()[17:18]
+
+    #Translate
+    disease = str(disease)
+    disease = disease.strip()
+    if disease in disease_db_de:
+        return disease_translation_df['itemLabel_EN'].loc[disease_translation_df['itemLabel_DE'] == disease].tolist()[0]
+    elif disease in disease_db_en:
+        return disease
+    elif ',' in disease:
+        # Did not translate because it is a concatenation of disease names
+        disease = disease.split(',')
+        disease = [entry.strip() for entry in disease]
+        return [translate_disease_name(entry) for entry in disease]
+
+    else:
+        # If typo occured
+        did_u_mean = didyoumean.didYouMean(disease, disease_db_de)
+        if did_u_mean in disease_db_en:
+            return did_u_mean
+        elif did_u_mean in disease_db_de:
+            return disease_translation_df['itemLabel_EN'].loc[disease_translation_df['itemLabel_DE']
+                                                              == did_u_mean].tolist()[0]
+        else:
+            complete_disease_name = _complete_partial_words(disease, disease_db_de, disease_db_en)
+            if translate(complete_disease_name) != complete_disease_name:
+                return translate(complete_disease_name)
+            else:
+                return disease
+
+
 def clean_country_name(country):
     """Takes a string of a country/ies (from edb) and returns cleaned country names
 
@@ -72,7 +136,7 @@ def clean_country_name(country):
         return [clean_country_name(entry) for entry in country]
 
 
-def translate_abbreviation(to_translate, to_clean=True, look_up=get_wiki_countries_df()):
+def _translate_abbreviation(to_translate, to_clean=True, look_up=get_wiki_countries_df()):
     """Takes a string or a list of countries and/or abbreviations and translates it to the full state name"""
     if isinstance(look_up, pd.DataFrame):
         wiki_countries_df = look_up
@@ -90,7 +154,7 @@ def translate_abbreviation(to_translate, to_clean=True, look_up=get_wiki_countri
                     return wiki_countries_df["state_name_de"].tolist()[i]
                     break
     if type(to_translate) == list:
-        return [translate_abbreviation(country) for country in to_translate]
+        return [_translate_abbreviation(country) for country in to_translate]
     else:
         return to_translate
 
@@ -114,7 +178,7 @@ def translate(to_translate, look_up=get_wiki_countries_df()):
         wiki_countries_df = look_up
     else:
         wiki_countries_df = get_wiki_countries_df()
-    to_translate = translate_abbreviation(clean_country_name(to_translate))
+    to_translate = _translate_abbreviation(clean_country_name(to_translate))
     continents = ["europa", "afrika", "amerika", "australien", "asien"]
     state_name_de = wiki_countries_df["state_name_de"].tolist()
     full_state_name_de = wiki_countries_df["full_state_name_de"].tolist()
@@ -140,3 +204,23 @@ def translate(to_translate, look_up=get_wiki_countries_df()):
     elif isinstance(to_translate, list):
         match = [translate(country) for country in to_translate]
     return match
+
+
+def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]), (translate, [3, 4])], reduced=True):
+    """
+
+    Returns:
+        pd.DataFrame: formatted edb
+    """
+    if not isinstance(clean, list):
+        clean = [clean]
+    edb = pd.read_csv("edb.csv", sep=";")
+    edb = edb.dropna(how="all").reset_index(drop=True)
+    edb.columns = list(map(lambda x: x.strip(), edb.columns))
+    for funct, columns in clean:
+        edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
+    if reduced:
+        to_drop = edb.iloc[:, [0, 1, 2, 5, 7, 8, 27, 28, 29, 30, 31, 32, 33, 34, 35]].columns.tolist()
+        return edb.drop(to_drop, axis=1)
+    else:
+        return edb
