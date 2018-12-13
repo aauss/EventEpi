@@ -1,7 +1,7 @@
 import os
 import pickle
-from annotator import *
-from my_utils import matching_elements
+from nlp_surveillance.annotator import *
+from nlp_surveillance.my_utils import matching_elements
 
 example_who_don = """
 New measures to overcome obstacles in responding to the Ebola virus disease (EVD) outbreak in the Democratic

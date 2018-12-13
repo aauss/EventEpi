@@ -1,4 +1,4 @@
-from wiki_country_parser import *
+from nlp_surveillance.wiki_country_parser import *
 
 
 def test_wiki_country_parser():
