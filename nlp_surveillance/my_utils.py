@@ -1,6 +1,6 @@
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
-from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
 from boilerpipe.extract import Extractor
 
 

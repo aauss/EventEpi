@@ -6,7 +6,7 @@ from epitator.resolved_keyword_annotator import ResolvedKeywordAnnotator
 from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 from itertools import groupby
-from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
 from typing import NamedTuple
 from functools import wraps
 
