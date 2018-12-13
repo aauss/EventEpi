@@ -1,5 +1,6 @@
 from deep_eq import deep_eq
 from edb_clean import *
+from edb_clean import _translate_abbreviation
 from my_utils import flatten_list
 
 
@@ -19,11 +20,11 @@ def test_translate_abbreviations():
                       ['Deutschland', 'Europäische Union'],
                       ['Belgien', 'Demokratische Republik Kongo']]
 
-    example = flatten_list([translate_abbreviation(country) for country in example_to_abbreviate])
+    example = flatten_list([_translate_abbreviation(country) for country in example_to_abbreviate])
     assert deep_eq(flatten_list(example), flatten_list(desired_output))
 
 
-def test_translation():
+def test_geoname_translation():
     example_to_translate = ["Deutschland", "Delaware", ["Kongo", "China"], "Niger"]
     expected_result_translate = ['Germany', 'Delaware',
                                  [['Democratic Republic of the Congo', 'Republic of Congo'],
@@ -37,3 +38,7 @@ def test_edb_to_timestamp():
                             'Mai 2018', '08.09.2017', '32.12.2017']
     expected_result_to_timestamp = ["2018-06-28", '2018-06-23', 'Mai 2018', '2017-09-08', '32.12.2017']
     assert deep_eq([edb_to_timestamp(time) for time in example_to_timestamp], expected_result_to_timestamp)
+
+def test_translate_disease_name():
+    assert translate_disease_name("Warzee, Gonorrhoee") == ['wart', 'gonorrhea']
+    assert translate_disease_name('Ebolda')
