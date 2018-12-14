@@ -39,6 +39,8 @@ def test_edb_to_timestamp():
     expected_result_to_timestamp = ["2018-06-28", '2018-06-23', 'Mai 2018', '2017-09-08', '32.12.2017']
     assert deep_eq([edb_to_timestamp(time) for time in example_to_timestamp], expected_result_to_timestamp)
 
+
 def test_translate_disease_name():
-    assert translate_disease_name("Warzee, Gonorrhoee") == ['wart', 'gonorrhea']
-    assert translate_disease_name('Ebolda')
+    assert translate_disease_name('Warzee, Gonorrhoee, BPS') == ['wart', 'gonorrhea', 'pertussis']
+    assert translate_disease_name('Ebolda') == 'Ebolda'
+    assert translate_disease_name("Ebola") == 'Ebola virus disease'
