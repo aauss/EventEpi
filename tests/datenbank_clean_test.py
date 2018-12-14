@@ -29,7 +29,7 @@ def test_geoname_translation():
     expected_result_translate = ['Germany', 'Delaware',
                                  [['Democratic Republic of the Congo', 'Republic of Congo'],
                                   ['Taiwan oder Republic of China', 'China']], 'Niger']
-    assert deep_eq(flatten_list([translate(example) for example in example_to_translate]),
+    assert deep_eq(flatten_list([translate_geonames(example) for example in example_to_translate]),
                    flatten_list(expected_result_translate))
 
 

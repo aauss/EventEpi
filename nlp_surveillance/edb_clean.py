@@ -100,7 +100,7 @@ def translate_disease_name(disease):
     elif disease in disease_db_en:
         return disease
     elif ',' in disease:
-        # Did not translate because it is a concatenation of disease names
+        # Did not translateq because it is a concatenation of disease names
         disease = disease.split(',')
         disease = [entry.strip() for entry in disease]
         return [translate_disease_name(entry) for entry in disease]
@@ -189,7 +189,7 @@ def _match_country(country, look_up, translation):
             return [translation[look_up.index(similar)] for similar in found]
 
 
-def translate(to_translate, look_up=get_wiki_countries_df()):
+def translate_geonames(to_translate, look_up=get_wiki_countries_df()):
     if isinstance(look_up, pd.DataFrame):
         wiki_countries_df = look_up
     else:
@@ -212,17 +212,19 @@ def translate(to_translate, look_up=get_wiki_countries_df()):
             did_u_mean = didyoumean.didYouMean(to_translate, state_name_de)
             if did_u_mean and (did_u_mean.lower() not in continents):
                 try:
-                    match = translate(did_u_mean)
+                    match = translate_geonames(did_u_mean)
                 except RecursionError:
                     print(did_u_mean, "caused recursion error")
             else:
                 match = to_translate
     elif isinstance(to_translate, list):
-        match = [translate(country) for country in to_translate]
+        match = [translate_geonames(country) for country in to_translate]
     return match
 
 
-def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]), (translate, [3, 4])], reduced=True):
+def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
+                           (translate_geonames, [3, 4]),
+                           (translate_disease_name, [6])], reduced=True):
     """
 
     Returns:
@@ -230,7 +232,9 @@ def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]), (
     """
     if not isinstance(clean, list):
         clean = [clean]
-    edb = pd.read_csv("edb.csv", sep=";")
+    dirname = os.path.dirname(__file__)
+    path = os.path.join(dirname, 'edb.csv')
+    edb = pd.read_csv(path, sep=";")
     edb = edb.dropna(how="all").reset_index(drop=True)
     edb.columns = list(map(lambda x: x.strip(), edb.columns))
     for funct, columns in clean:
