@@ -117,7 +117,7 @@ def abbreviate_df(wikipedia_country_df, columns=["state_name_de", "full_state_na
 
 def get_wiki_countries_df(use_pickle=True):
     # scripts_path = inspect.getfile(inspect.currentframe())
-    pickle_path = os.path.join("pickles", "wiki_countries_df.p")
+    pickle_path = os.path.join(os.path.dirname(__file__), "pickles", "wiki_countries_df.p")
     if os.path.exists(pickle_path) and use_pickle:
         wiki_countries_df = pickle.load(open(pickle_path, "rb"))
     else:
