@@ -4,13 +4,11 @@
 import re
 import os
 import warnings
-import pickle
 import pandas as pd
 from didyoumean import didyoumean
 from datetime import datetime
 from .wiki_country_parser import get_wiki_countries_df
-from .my_utils import get_results_sparql
-
+from .wiki_disease_parser import get_wiki_disease_df
 
 def _add_zero(x):
     """Adds a zero if day or month only have a single value
@@ -55,32 +53,9 @@ def _complete_partial_words(to_complete, list_of_possible_corrections_de, list_o
 
 
 def translate_disease_name(disease):
+    # TODO: Write this into a wiki_disease_parser
     # Initialization of databases
-    endpoint_url = "https://query.wikidata.org/sparql"
-    query = """SELECT Distinct ?item ?itemLabel_DE ?itemLabel_EN WHERE {
-                ?item wdt:P31 wd:Q12136.
-                OPTIONAL{
-                ?item rdfs:label ?itemLabel_DE.
-                FILTER (lang(?itemLabel_DE) = "de"). }
-                ?item rdfs:label ?itemLabel_EN.
-                FILTER (lang(?itemLabel_EN) = "en").
-                } order by ?item"""
-    dirname = os.path.dirname(__file__)
-    path_wiki = os.path.join(dirname, 'pickles', 'disease_wikidata.p')
-    if not os.path.exists(path_wiki):
-        disease_translation_df = get_results_sparql(endpoint_url, query)
-        pickle.dump(disease_translation_df, open(path_wiki, 'wb'))
-    else:
-        disease_translation_df = pickle.load(open(path_wiki, 'rb'))
-
-    path_code = os.path.join(dirname, 'pickles', 'disease_code.p')
-    if not os.path.exists(path_code):
-        path = os.path.join(os.path.dirname(__file__), 'diseaseCodes.csv')
-        disease_code_df = pd.read_csv(path, ';')
-        disease_code_df = disease_code_df[['Code', 'TypeName']]
-        pickle.dump(disease_code_df, open(path_code, 'wb'))
-    else:
-        disease_code_df = pickle.load(open(path_code, 'rb'))
+    disease_translation_df, disease_code_df = get_wiki_disease_df()
     disease_db_en = disease_translation_df['itemLabel_EN']
     disease_db_de = [d for d in disease_translation_df['itemLabel_DE'] if isinstance(d, str)]
 
@@ -100,13 +75,13 @@ def translate_disease_name(disease):
     elif disease in disease_db_en:
         return disease
     elif ',' in disease:
-        # Did not translateq because it is a concatenation of disease names
+        # Did not translate because it is a concatenation of disease names
         disease = disease.split(',')
         disease = [entry.strip() for entry in disease]
         return [translate_disease_name(entry) for entry in disease]
 
     else:
-        # If typo occured
+        # If typo occurred
         did_u_mean = didyoumean.didYouMean(disease, disease_db_de)
         if did_u_mean in disease_db_en:
             return did_u_mean
@@ -224,11 +199,12 @@ def translate_geonames(to_translate, look_up=get_wiki_countries_df()):
 
 def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
                            (translate_geonames, [3, 4]),
-                           (translate_disease_name, [6])], reduced=True):
+                           (translate_disease_name, [6])], reduced=True, condensed=False, unprocessed=False):
     """
 
     Returns:
         pd.DataFrame: formatted edb
+        if reduce drop columns unnecessary for analysis
     """
     if not isinstance(clean, list):
         clean = [clean]
@@ -237,9 +213,11 @@ def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
     edb = pd.read_csv(path, sep=";")
     edb = edb.dropna(how="all").reset_index(drop=True)
     edb.columns = list(map(lambda x: x.strip(), edb.columns))
+    if unprocessed:
+        return edb
     for funct, columns in clean:
         edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
-    if reduced:
+    if reduced or condensed:
         to_drop = edb.iloc[:, [0, 1, 2, 5, 7, 8, 27, 28, 29, 30, 31, 32, 33, 34, 35]].columns.tolist()
         return edb.drop(to_drop, axis=1)
     else:
