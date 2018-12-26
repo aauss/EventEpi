@@ -10,6 +10,7 @@ from datetime import datetime
 from .wiki_country_parser import get_wiki_countries_df
 from .wiki_disease_parser import get_wiki_disease_df
 
+
 def _add_zero(x):
     """Adds a zero if day or month only have a single value
 
@@ -209,7 +210,7 @@ def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
     if not isinstance(clean, list):
         clean = [clean]
     dirname = os.path.dirname(__file__)
-    path = os.path.join(dirname, 'edb.csv')
+    path = os.path.join(dirname, 'data', 'edb.csv')
     edb = pd.read_csv(path, sep=";")
     edb = edb.dropna(how="all").reset_index(drop=True)
     edb.columns = list(map(lambda x: x.strip(), edb.columns))
