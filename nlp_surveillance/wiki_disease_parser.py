@@ -25,7 +25,7 @@ def get_wiki_disease_df():
     # Get official RKI codes for disease names
     path_code = os.path.join(dirname, 'pickles', 'disease_code.p')
     if not os.path.exists(path_code):
-        path = os.path.join(os.path.dirname(__file__),'data', 'diseaseCodes.csv')
+        path = os.path.join(os.path.dirname(__file__), 'data', 'diseaseCodes.csv')
         disease_code_df = pd.read_csv(path, ';')
         disease_code_df = disease_code_df[['Code', 'TypeName']]
         pickle.dump(disease_code_df, open(path_code, 'wb'))
