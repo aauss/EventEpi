@@ -154,7 +154,7 @@ def dates(doc, raw=False):
 
 
 # Run this shit (a.k.a annotate all the scraped WHO DONs)
-def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, dates, keywords]):
+def create_annotated_database(texts, entity_funcs_and_params=None):
     # TODO: Maybe add a cleaner function for inputted text.
     """Given a list of texts (str) annotate and extract disease keywords, geonames, and dates and return
     a dictionary of the text and the annotations
@@ -162,6 +162,8 @@ def create_annotated_database(texts, entity_funcs_and_params=[geonames, cases, d
     texts -- a list of texts (str)
     entity_funcs -- list of tuples of function and kwargs
     """
+    if entity_funcs_and_params is None:
+        entity_funcs_and_params = [geonames, cases, dates, keywords]
     if type(texts) == str:
         texts = [texts]
     if type(entity_funcs_and_params) != list:

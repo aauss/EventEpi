@@ -198,15 +198,17 @@ def translate_geonames(to_translate, look_up=get_wiki_countries_df()):
     return match
 
 
-def get_cleaned_edb(clean=[(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
-                           (translate_geonames, [3, 4]),
-                           (translate_disease_name, [6])], reduced=True, condensed=False, unprocessed=False):
+def get_cleaned_edb(clean=None, reduced=True, condensed=False, unprocessed=False):
     """
 
     Returns:
         pd.DataFrame: formatted edb
         if reduce drop columns unnecessary for analysis
     """
+    if clean is None:
+        clean = [(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
+                 (translate_geonames, [3, 4]),
+                 (translate_disease_name, [6])]
     if not isinstance(clean, list):
         clean = [clean]
     dirname = os.path.dirname(__file__)
