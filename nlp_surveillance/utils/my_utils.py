@@ -41,4 +41,3 @@ def get_results_sparql(endpoint_url, query):
     sparql.setReturnFormat(JSON)
     df = pd.DataFrame(sparql.query().convert()["results"]["bindings"])
     return df.applymap(lambda x: x['value'] if isinstance(x, dict) else x)
-

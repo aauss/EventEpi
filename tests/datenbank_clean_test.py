@@ -1,7 +1,7 @@
-from nlp_surveillance.deep_eq import deep_eq
+from nlp_surveillance.utils.deep_eq import deep_eq
 from nlp_surveillance.edb_clean import *
 from nlp_surveillance.edb_clean import _translate_abbreviation
-from nlp_surveillance.my_utils import flatten_list
+from nlp_surveillance.utils.my_utils import flatten_list
 
 
 def test_country_cleaning():

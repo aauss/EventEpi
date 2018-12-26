@@ -1,4 +1,4 @@
-from nlp_surveillance.wiki_country_parser import *
+from nlp_surveillance.wiki_country_parser import get_wiki_countries_df
 
 
 def test_wiki_country_parser():
