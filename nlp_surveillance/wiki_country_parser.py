@@ -98,15 +98,17 @@ def abbreviate_country(country_name):
     Example: United Kingdom --> UK
     """
     abbreviation = None
-    if len(re.findall(r"([A-Z|Ä|Ö|Ü])", country_name)) > 1:
-        abbreviation = "".join(re.findall(r"([A-Z|Ä|Ö|Ü])", country_name))
+    if len(re.findall(r"([A-Z|ÄÖÜ])", country_name)) > 1:
+        abbreviation = "".join(re.findall(r"([A-Z|ÄÖÜ])", country_name))
     return abbreviation
 
 
-def abbreviate_df(wikipedia_country_df, columns=["state_name_de", "full_state_name_de", "translation_state_name"]):
+def abbreviate_df(wikipedia_country_df, columns=None):
     """Search for names that might have abbreviations. If they consist of two or more words that start with a capital
     letter, it makes an abbreviation out of it
     """
+    if columns is None:
+        columns = ["state_name_de", "full_state_name_de", "translation_state_name"]
     abbreviations = [list(map(abbreviate_country, wikipedia_country_df[column].tolist())) for column in columns]
     abbreviations = [list(a) for a in zip(*abbreviations)]
     abbreviations = [list(filter(None, abb)) for abb in abbreviations if str(abb) != 'None']  # Removes Nones
