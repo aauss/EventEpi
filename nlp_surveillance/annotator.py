@@ -33,17 +33,23 @@ def entity_tuple(entity_extractor):
     return decorate
 
 
-def annotate(text):
+def annotate(text, tiers=None):
     """Returns an document annotated for dates, disease counts, diseases, and geoneames
 
     :param text: a string to be annotated
     :return : an AnnoDoc object
     """
     doc = AnnoDoc(text)
-    doc.add_tiers(GeonameAnnotator())
-    doc.add_tiers(ResolvedKeywordAnnotator())
-    doc.add_tiers(CountAnnotator())
-    doc.add_tiers(DateAnnotator())
+    if tiers is None:
+        doc.add_tiers(GeonameAnnotator())
+        doc.add_tiers(ResolvedKeywordAnnotator())
+        doc.add_tiers(CountAnnotator())
+        doc.add_tiers(DateAnnotator())
+    else:
+        if not isinstance(tiers, list):
+            tiers = [tiers]
+        map(lambda tier: doc.add_tiers(tier), tiers)
+
     return doc
 
 
