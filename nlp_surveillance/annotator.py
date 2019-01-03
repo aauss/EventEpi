@@ -37,6 +37,7 @@ def annotate(text, tiers=None):
     """Returns an document annotated for dates, disease counts, diseases, and geoneames
 
     :param text: a string to be annotated
+    :param tiers: a string to specify the tiers that shall be added
     :return : an AnnoDoc object
     """
     doc = AnnoDoc(text)
@@ -48,7 +49,7 @@ def annotate(text, tiers=None):
     else:
         if not isinstance(tiers, list):
             tiers = [tiers]
-        map(lambda tier: doc.add_tiers(tier), tiers)
+        map(lambda tier: doc.add_tiers(eval(tier)), tiers)
 
     return doc
 
