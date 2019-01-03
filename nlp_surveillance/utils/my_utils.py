@@ -1,7 +1,12 @@
 import pandas as pd
+import tika
+import re
+import unicodedata
+from tika import parser
 from SPARQLWrapper import SPARQLWrapper, JSON
 from tqdm import tqdm
 from boilerpipe.extract import Extractor
+tika.TikaClientOnly = True
 
 
 def flatten_list(list_2d):
@@ -26,13 +31,19 @@ def matching_elements(l1, l2):
 
 
 def extract_from_url(list_of_links):
+    # TODO: Rewrite to a function that only takes one link. Therefore, search for all uses of extract_from_url
     """Extracts the main content from a list of links and returns a list of texts (str)
 
     list_of_links -- a list containing URLs of webpages to get the main content from
     """
     if type(list_of_links) == str:
         list_of_links = [list_of_links]
-    return[Extractor(extractor='ArticleExtractor', url=url).getText().replace('\n', '') for url in tqdm(list_of_links)]
+    return [Extractor(extractor='ArticleExtractor', url=url).getText().replace('\n', '') for url in tqdm(list_of_links)]
+
+
+def extract_from_pdf(url):
+    raw = parser.from_file(url)
+    return raw['content']
 
 
 def get_results_sparql(endpoint_url, query):
@@ -41,3 +52,15 @@ def get_results_sparql(endpoint_url, query):
     sparql.setReturnFormat(JSON)
     df = pd.DataFrame(sparql.query().convert()["results"]["bindings"])
     return df.applymap(lambda x: x['value'] if isinstance(x, dict) else x)
+
+
+def remove_nans(to_clean):
+    return [entry for entry in to_clean if str(entry).lower() != 'nan']
+
+
+def remove_guillemets(string):
+    return re.sub(r'[<>]', '', string)
+
+
+def remove_control_characters(string):
+    return "".join(char for char in string if unicodedata.category(char)[0] != "C")
