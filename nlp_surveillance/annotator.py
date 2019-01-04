@@ -49,7 +49,7 @@ def annotate(text, tiers=None):
     else:
         if not isinstance(tiers, list):
             tiers = [tiers]
-        map(lambda tier: doc.add_tiers(eval(tier)), tiers)
+        list(map(lambda tier: doc.add_tiers(eval(tier)), tiers))
 
     return doc
 
