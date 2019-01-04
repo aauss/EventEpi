@@ -12,14 +12,7 @@ from .wiki_disease_parser import get_wiki_disease_df
 
 
 def _add_zero(x):
-    """Adds a zero if day or month only have a single value
-
-    Args:
-        x: a day or month as string
-
-    Returns:
-        day/month as string in the format dd/mm
-    """
+    # Adds a zero if day or month only have a single value
     if len(x) == 1:
         x = "0" + x
     return x
