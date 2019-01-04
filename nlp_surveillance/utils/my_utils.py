@@ -30,20 +30,17 @@ def matching_elements(l1, l2):
     return matches
 
 
-def extract_from_url(list_of_links):
-    # TODO: Rewrite to a function that only takes one link. Therefore, search for all uses of extract_from_url
+def extract_from_url(url):
     """Extracts the main content from a list of links and returns a list of texts (str)
 
     list_of_links -- a list containing URLs of webpages to get the main content from
     """
-    if type(list_of_links) == str:
-        list_of_links = [list_of_links]
-    return [Extractor(extractor='ArticleExtractor', url=url).getText().replace('\n', '') for url in tqdm(list_of_links)]
+    return Extractor(extractor='ArticleExtractor', url=str(url)).getText()
 
 
 def extract_from_pdf(url):
     raw = parser.from_file(url)
-    return raw['content']
+    return raw['content'].replace('�', '')
 
 
 def get_results_sparql(endpoint_url, query):
@@ -66,9 +63,21 @@ def remove_control_characters(string):
     return "".join(char for char in string if unicodedata.category(char)[0] != "C")
 
 
-def get_sentence(annotated_span, text):
+def get_sentence_from_annotated_span(annotated_span, text):
     # Get the first and last occurrence the end of a sentence to create a window for slicing.
     # Slice text. -1 is used to omit trailing whitespace and + 2 to include the last period.
     start_of_text = re.search("(?s:.*)\S\.\s[A-Z]", text[:annotated_span.start]).span()[1]
     end_of_text = re.search(r'\S\.\s[A-Z]', text[annotated_span.end:]).span()[0]
     return text[start_of_text-1:annotated_span.end+end_of_text+2]
+
+
+def check_url_validity(url):
+    # From django
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.match(regex, url) is not None
