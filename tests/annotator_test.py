@@ -1,76 +1,57 @@
 import os
 import pickle
+import pytest
 from nlp_surveillance.annotator import *
 from nlp_surveillance.utils.my_utils import matching_elements
+from nlp_surveillance.EntityTuple import Entity
 
-example_who_don = """
-New measures to overcome obstacles in responding to the Ebola virus disease (EVD) outbreak in the Democratic
-Republic of the Congo are having a positive impact. The Ministry of Health (MoH), WHO and partners continue to be
-confident that, despite challenges, the outbreak can be contained. Over the past week (7 – 13 November),
-transmission continued in several areas of North Kivu Province, while a geographical expansion of the outbreak to
-two new health zones (Kyondo and Mutwanga) was observed (Figure 1).
-The first cases reported from these health zones were exposed through contact with cases in Butembo and Beni,
-respectively. During the reporting period, 31 new confirmed EVD cases were reported from Beni, Mutwanga, Kalunguta,
-Butembo, Vuhovi, Kyondo and Musienene. Four of the new cases were newborn babies and infants aged less than two
-years, three were children aged between 2 – 17 years and three were women who were pregnant or breastfeeding. Three
-health workers from Beni and Butembo were among the newly infected; 31 health workers have been infected to date.
-Twelve additional survivors were discharged from Beni (nine), Butembo (two) and Mabalako (one) Ebola treatment
-centres (ETCs) and reintegrated into their communities; 103 patients have recovered to date. During the past week,
-a review and reconciliation of case records was conducted. This review resulted in the addition of 14 probable cases
-, invalidation of 11 past deaths previously reported as probable cases and exclusion of duplicate cases. In addition
-, some confirmed and probable cases were recategorized to health zones where their infection most likely occurred,
-as opposed to the location of the ETC where they were admitted. As of 13 November, 341 EVD cases (303 confirmed and
-38 probable), including 215 deaths (177 confirmed and 38 probable)1, have been reported in 11 health zones in North
-Kivu Province and three health zones in Ituri Province (Figure 1). The overall trends in weekly case incidence
-reflect the continuation of community transmission in several cities and villages in North Kivu (Figure 2). Given
-the expected delays in case detection and ongoing data reconciliation activities, trends, especially in the most
-recent weeks, must be interpreted cautiously. The risk of the outbreak spreading to other provinces in the
-Democratic Republic of the Congo, as well as to neighbouring countries, remains very high. Over the course of the
-past week, alerts have been reported from South Sudan and Uganda; EVD has been ruled out for all alerts to date. The
- vaccination of health and frontline workers at priority sites in Uganda began on 7 November, and preparations are
- ongoing for the vaccination of health and frontline workers in Rwanda and South Sudan."""
 
-# Not explicitly testing the annotate function, since it only calls EpiTator, and if the object is created, it worked
-path = os.path.join("..", "nlp_surveillance", "pickles", "example_who_don_annotated.p")
-example_exists = os.path.exists(path)
-if not example_exists:
-    print("Annotating example text...")
-    example_who_don_annotated = annotate(example_who_don)
-    del example_who_don_annotated.tiers["spacy.nes"]
-    del example_who_don_annotated.tiers["spacy.noun_chunks"]
-    del example_who_don_annotated.tiers["spacy.sentences"]
-    del example_who_don_annotated.tiers["spacy.tokens"]
-    del example_who_don_annotated.tiers["nes"]
-    del example_who_don_annotated.tiers["ngrams"]
-    del example_who_don_annotated.tiers["tokens"]
-    pickle.dump(example_who_don_annotated, open(path, "wb"))
-else:
-    print("Retrieving saved and annotated example text... ")
-    example_who_don_annotated = pickle.load(open(path, "rb"))
-    if example_who_don_annotated:
-        print("...successfully retrieved. ")
+@pytest.fixture
+def get_example_who_don_annotated_without_tiers():
+    example_who_don = get_example_who_don()
+    path_annotated = os.path.join("..", "nlp_surveillance", "pickles", "example_who_don_annotated.p")
+    example_exists = os.path.exists(path_annotated)
+    if not example_exists:
+        example_who_don_annotated = annotate(example_who_don)
+        example_who_don_annotated_without_tiers = example_who_don_annotated.delete_non_epitator_name_entity_tiers()
+        pickle.dump(example_who_don_annotated_without_tiers, open(path_annotated, "wb"))
     else:
-        print("...retrieve failed. Pickle might be corrupted. Delete example_who_don.p and try again.")
+        example_who_don_annotated_without_tiers = pickle.load(open(path_annotated, "rb"))
+        if not example_who_don_annotated_without_tiers:
+            print("...retrieve failed. Pickle might be corrupted. Delete example_who_don.p and try again.")
+    return example_who_don_annotated_without_tiers
 
 
-def test_geonames():
-    assert geonames(example_who_don_annotated) == Entity(entity='geonames',
-                                                         resolved=['Republic of Uganda', 'South Sudan']),\
-        "geonames failed"
+def test_database_creation():
+    example_who_don = get_example_who_don()
+    database = create_annotated_database(example_who_don, [geonames, (keywords, {"raw": False, "with_label": True})])
+    del database["texts"]  # Delete text since it is not affected by the function call and is to cumbersome to assert
+    assert database == {'dates': [], 'cases': [], 'keywords': [
+        [{'id': 'http://purl.obolibrary.org/obo/DOID_4325', 'label': 'Ebola hemorrhagic fever', 'type': 'disease'}]],
+                        'geonames': [['Republic of Uganda', 'Republic of the Congo', 'South Sudan']]}
 
 
-def test_keywords():
-    assert keywords(example_who_don_annotated) == Entity(entity='keywords', resolved=['Ebola hemorrhagic fever']),\
+def test_geonames(get_example_who_don_annotated_without_tiers):
+    assert geonames(get_example_who_don_annotated_without_tiers) == Entity(entity='geonames',
+                                                                           resolved=
+                                                                           ['Republic of Uganda',
+                                                                            'South Sudan'
+                                                                           ]), "geonames failed"
+
+
+def test_keywords(get_example_who_don_annotated_without_tiers):
+    assert keywords(get_example_who_don_annotated_without_tiers) == Entity(entity='keywords',
+                                                                           resolved=['Ebola hemorrhagic fever']),\
         "keywords failed"
 
-    assert keywords(example_who_don_annotated,
+    assert keywords(get_example_who_don_annotated_without_tiers,
                     with_label=True) == Entity(entity='keywords', resolved=[{
                                                     'id': 'http://purl.obolibrary.org/obo/DOID_4325',
                                                     'label': 'Ebola hemorrhagic fever', 'type': 'disease'}])
 
 
-def test_cases():
-    case_numbers = cases(example_who_don_annotated, raw=True)
+def test_cases(get_example_who_don_annotated_without_tiers):
+    case_numbers = cases(get_example_who_don_annotated_without_tiers, raw=True)
     expected_case_numbers = Entity(entity='cases', resolved=[2, 1, 31, 4, 3, 3, 3, 31, 12, 9, 2, 103, 14, 11, 341, 303,
                                                              38, 215, 177, 38, 11, 3, 1, 2])
     assert isinstance(case_numbers, Entity), "Cases has wrong entity"
@@ -80,14 +61,24 @@ def test_cases():
     assert len(matches) > int(len(expected_case_numbers[1]) * 0.8)
 
 
-def test_dates():
-    assert dates(example_who_don_annotated) == Entity(entity='dates', resolved=['2018-11-07']), "dates failed"
+def test_dates(get_example_who_don_annotated_without_tiers):
+    assert dates(get_example_who_don_annotated_without_tiers) == Entity(entity='dates',
+                                                                        resolved=['2018-11-07']), "dates failed"
+
+def test_removal_of_non_epitator_name_entity_tiers():
+    before = ['spacy.sentences', 'spacy.noun_chunks', 'spacy.tokens', 'spacy.nes', 'tokens', 'ngrams', 'nes',
+              'geonames', 'resolved_keywords', 'structured_data', 'structured_data.values', 'dates', 'raw_numbers',
+              'counts']
+    after = ['geonames', 'resolved_keywords', 'structured_data', 'structured_data.values', 'dates', 'raw_numbers',
+             'counts']
+    test_annotate = annotate('I love Frankfurt')
+    assert before == list(test_annotate.tiers.keys()), 'Did not annotate correctly'
+    test_annotate.delete_non_epitator_name_entity_tiers()
+    assert after == list(test_annotate.tiers.keys()), 'Did not delete non epitat name entities tiers correctly'
 
 
-def test_database_creation():
-    print("Testing database creation...")
-    database = create_annotated_database(example_who_don, [geonames, (keywords, {"raw": False, "with_label": True})])
-    del database["texts"]
-    assert database == {'dates': [], 'cases': [], 'keywords': [
-        [{'id': 'http://purl.obolibrary.org/obo/DOID_4325', 'label': 'Ebola hemorrhagic fever', 'type': 'disease'}]],
-                        'geonames': [['Democratic Republic of the Congo', 'Republic of Uganda', 'South Sudan']]}
+def get_example_who_don():
+    path_example_who_don = os.path.join('..', 'nlp_surveillance', 'data', 'example_who_don')
+    with open(path_example_who_don, 'r') as handler:
+        example_who_don = handler.read()
+    return example_who_don
