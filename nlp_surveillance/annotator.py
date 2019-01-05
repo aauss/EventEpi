@@ -7,40 +7,45 @@ from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 from itertools import groupby
 from tqdm import tqdm
-from typing import NamedTuple
-from functools import wraps
+from types import MethodType
+
+from .EntityTuple import entity_tuple
+from .utils.my_utils import remove_control_characters
 
 spacy.load('en_core_web_sm')
 
 
-class Entity(NamedTuple):
-    """To have a name for the returned entity tuples"""
+def create_annotated_database(texts, entity_funcs_and_params=None):
+    """Given a list of texts (str) annotate and extract disease keywords, geonames, and dates and return
+    a dictionary of the text and the annotations
+    """
+    if entity_funcs_and_params is None:
+        entity_funcs_and_params = [geonames, cases, dates, keywords]
+    if isinstance(texts, str):
+        texts = [texts]
+    if not isinstance(entity_funcs_and_params, list):
+        entity_funcs_and_params = [entity_funcs_and_params]
 
-    entity: str
-    resolved: list = []
+    # Convert all the functions not in tuples into tuples with empty kwargs
+    entity_funcs_and_params = transform_to_tuple_of_function_and_arguments(entity_funcs_and_params)
+    database = {"texts": texts, "dates": [], "cases": [], "keywords": [], "geonames": []}
 
-
-def entity_tuple(entity_extractor):
-    """Wraps the return value of and entity extractor into a Entity tuple"""
-
-    @wraps(entity_extractor)
-    def decorate(doc, **kwargs):
-        resolved = entity_extractor(doc, **kwargs)
-        entity = entity_extractor.__name__
-        if type(resolved) != list:
-            resolved = [resolved]
-        return Entity(entity, resolved)
-    return decorate
+    for i, text in enumerate(tqdm(texts)):
+        doc = annotate(text)
+        for entity_func, kwargs in entity_funcs_and_params:
+            try:
+                entity, resolved = entity_func(doc, **kwargs)
+                database[entity].append(resolved)
+            except ValueError as e:
+                print("Type error in text({})".format(i) + ": " + str(e))
+    return database
 
 
 def annotate(text, tiers=None):
-    """Returns an document annotated for dates, disease counts, diseases, and geoneames
-
-    :param text: a string to be annotated
-    :param tiers: a string to specify the tiers that shall be added
-    :return : an AnnoDoc object
-    """
-    doc = AnnoDoc(text)
+    # Returns an annotated text
+    doc = AnnoDoc(remove_control_characters(text))
+    # Add bound method to delete spacy tiers. Necessary because pickling does not work otherwise
+    doc.delete_non_epitator_name_entity_tiers = MethodType(delete_non_epitator_name_entity_tiers, doc)
     if tiers is None:
         doc.add_tiers(GeonameAnnotator())
         doc.add_tiers(ResolvedKeywordAnnotator())
@@ -56,12 +61,8 @@ def annotate(text, tiers=None):
 
 @entity_tuple
 def geonames(doc, raw=False):
-    """Returns (the most occurring) geographical entity/entities in an annotated document
+    # Returns (the most occurring) geographical entity/entities in an annotated document
 
-    :param doc: an annotated string
-    :param raw: returns a not preprocessed annotation (Default False)
-    :return:
-    """
     geo_spans = doc.tiers["geonames"].spans
     if raw:
         return [geo_spans[i].geoname["name"] for i in range(len(geo_spans))]
@@ -75,13 +76,8 @@ def geonames(doc, raw=False):
 
 @entity_tuple
 def keywords(doc, raw=False, with_label=False):
-    """Returns the most occurring disease entity in a annotated document
+    # Returns the (most occurring) disease entity in a annotated document
 
-    :param doc: an annotated string
-    :param raw: returns a not preprocessed annotation (Default False)
-    :param with_label: returns a resolved keyword as dict with ontology id and label (Default False)
-    :return:
-    """
     keyword_spans = doc.tiers["resolved_keywords"].spans
     if raw:
         if not with_label:
@@ -123,11 +119,8 @@ def keywords(doc, raw=False, with_label=False):
 
 @entity_tuple
 def cases(doc, raw=False):
-    """Returns the disease counts with the attribute "confirmed" in a annotated document
+    # Returns the disease counts (with the attribute "confirmed") in a annotated document
 
-    doc -- an annotated string
-    raw -- returns a not preprocessed annotation (Default False)
-    """
     case_spans = doc.tiers["counts"].spans
     if raw:
         return [case_spans[i].metadata['count'] for i in range(len(case_spans))]
@@ -138,11 +131,8 @@ def cases(doc, raw=False):
 
 @entity_tuple
 def dates(doc, raw=False):
-    """Returns most mentioned date in a annotated document
+    # Returns (most mentioned) date in a annotated document
 
-    doc -- an annotated string
-    raw -- returns a not preprocessed annotation (Default False)
-    """
     date_spans = doc.tiers["dates"].spans
     dates_ = [date_spans[i].metadata["datetime_range"][0].strftime("%Y-%m-%d")
               for i in range(len(date_spans))]
@@ -160,32 +150,17 @@ def dates(doc, raw=False):
             return date[0]
 
 
-# Run this shit (a.k.a annotate all the scraped WHO DONs)
-def create_annotated_database(texts, entity_funcs_and_params=None):
-    # TODO: Maybe add a cleaner function for inputted text.
-    """Given a list of texts (str) annotate and extract disease keywords, geonames, and dates and return
-    a dictionary of the text and the annotations
+def transform_to_tuple_of_function_and_arguments(entity_funcs_and_params):
+    return [(should_be_tuple, {}) if callable(should_be_tuple)
+            else should_be_tuple
+            for should_be_tuple in entity_funcs_and_params]
 
-    texts -- a list of texts (str)
-    entity_funcs -- list of tuples of function and kwargs
-    """
-    if entity_funcs_and_params is None:
-        entity_funcs_and_params = [geonames, cases, dates, keywords]
-    if type(texts) == str:
-        texts = [texts]
-    if type(entity_funcs_and_params) != list:
-        entity_funcs_and_params = [entity_funcs_and_params]
 
-    # Convert all the functions not in tuples into tuples with empty kwargs
-    entity_funcs_and_params = [(should_be_tuple, {}) if callable(should_be_tuple) else should_be_tuple
-                               for should_be_tuple in entity_funcs_and_params]
-    database = {"texts": texts, "dates": [], "cases": [], "keywords": [], "geonames": []}
-    for i, text in enumerate(tqdm(texts)):
-        doc = annotate(text.replace("\n", " "))
-        for entity_func, kwargs in entity_funcs_and_params:
-            try:
-                entity, resolved = entity_func(doc, **kwargs)
-                database[entity].append(resolved)
-            except ValueError as e:
-                print("Type error in text({})".format(i) + ": " + str(e))
-    return database
+def delete_non_epitator_name_entity_tiers(self):
+    del self.tiers["spacy.nes"]
+    del self.tiers["spacy.noun_chunks"]
+    del self.tiers["spacy.sentences"]
+    del self.tiers["spacy.tokens"]
+    del self.tiers["nes"]
+    del self.tiers["ngrams"]
+    del self.tiers["tokens"]
