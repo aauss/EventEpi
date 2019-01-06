@@ -65,6 +65,7 @@ def test_dates(get_example_who_don_annotated_without_tiers):
     assert dates(get_example_who_don_annotated_without_tiers) == Entity(entity='dates',
                                                                         resolved=['2018-11-07']), "dates failed"
 
+
 def test_removal_of_non_epitator_name_entity_tiers():
     before = ['spacy.sentences', 'spacy.noun_chunks', 'spacy.tokens', 'spacy.nes', 'tokens', 'ngrams', 'nes',
               'geonames', 'resolved_keywords', 'structured_data', 'structured_data.values', 'dates', 'raw_numbers',
