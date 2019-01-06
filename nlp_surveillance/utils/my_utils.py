@@ -12,11 +12,19 @@ def flatten_list(list_2d):
 
     flattened = []
     for entry in list_2d:
-        if type(entry) == str:
+        if isinstance(entry, str):
             flattened.append(entry)
-        else:
+        elif isinstance(entry, list):
             flattened.extend(flatten_list(entry))
+        else:
+            flattened.append(entry)
+
     return flattened
+
+
+def split_and_flatten_list(to_split_and_flatten):
+    return flatten_list(list(map(lambda x: x.split() if isinstance(x, str) else x,
+                                 to_split_and_flatten)))
 
 
 def matching_elements(l1, l2):
