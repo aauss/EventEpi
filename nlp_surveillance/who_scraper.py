@@ -1,16 +1,47 @@
 import requests
 import os
 import pickle
+import pandas as pd
 from bs4 import BeautifulSoup
 
+from .utils.my_utils import try_if_connection_is_possible
+from .utils.text_from_url import extract_text_from_html_webpage
+from .annotator import geonames, dates, keywords, cases, create_annotated_database
 
-def get_links_by_year(list_of_years=None, proxies={'http': 'http://fw-bln.rki.local:8020'}):
-    """Returns (all) the anual links of the WHO DONs
 
-    list_of_years -- a list of years (YYYY format) you want to parse (default None)
-    proxies -- the proxy to use while scraping (default {'http': 'http://fw-bln.rki.local:8020'})
-    """
-    page = requests.get('http://www.who.int/csr/don/archive/year/en/', proxies=proxies)
+def get_annotated_2018_whos(entity_funcs_and_params=None):
+    path = os.path.join(os.path.dirname(__file__), "pickles", "parsed_who_df.p")
+    if not os.path.isfile(path):
+        all_links = scrape(years=['2018'])
+        extracted = list(map(lambda x: extract_text_from_html_webpage(x), all_links))
+        if entity_funcs_and_params is None:
+            entity_funcs_and_params = [(geonames, {"raw": True}),
+                                       (cases, {"raw": True}),
+                                       (dates, {"raw": True}),
+                                       keywords]
+        parsed_whos_df = pd.DataFrame.from_dict(
+            create_annotated_database(extracted, entity_funcs_and_params=entity_funcs_and_params))
+        pickle.dump(parsed_whos_df, open(path, "wb"))
+    else:
+        return pickle.load(open(path, "rb"))
+
+
+def scrape(years=None, months=None, headers=None, proxies=None):
+    # Scrapes the WHO DONs using the WHO DON scraping functions and returns the links to these DONs
+
+    if not try_if_connection_is_possible() and proxies is not None:
+        headers = load_params()["headers"]
+        proxies = load_params()["proxies"]
+
+    years = get_links_by_year(list_of_years=years, proxies=proxies, headers=headers)
+    all_links = get_links_per_year(years, list_of_months=months, proxies=proxies, headers=headers)
+    return all_links
+
+
+def get_links_by_year(list_of_years=None, proxies=None, headers=None):
+    # Returns (all) the anual links of the WHO DONs
+
+    page = requests.get('http://www.who.int/csr/don/archive/year/en/', proxies=proxies, headers=headers)
     soup = BeautifulSoup(page.content, 'html.parser')
     archiv_years = soup.find('ul', attrs={'class': 'list'})
     years_links_html = archiv_years.find_all('a')
@@ -21,17 +52,13 @@ def get_links_by_year(list_of_years=None, proxies={'http': 'http://fw-bln.rki.lo
         return ['http://www.who.int' + link.get('href') for link in years_links_html]
 
 
-def get_links_per_year(years_links, list_of_months=None, proxies={'http': 'http://fw-bln.rki.local:8020'}):
-    """Take a list of links to the annual archive and return a list of DON links of these years
+def get_links_per_year(years_links, list_of_months=None, proxies=None, headers=None):
+    # Take a list of links to the annual archive and return a list of DON links of these years
 
-    years_links -- a list of links of the anual archive to parse
-    list_of_months -- a list of months (MMM* format) you want to parse (default None)
-    proxies -- the proxy to use while scraping (default {'http': 'http://fw-bln.rki.local:8020'})
-    """
     all_links = []
 
     for year_link in years_links:
-        page_year = requests.get(year_link, proxies=proxies)
+        page_year = requests.get(year_link, proxies=proxies, headers=headers)
         soup_year = BeautifulSoup(page_year.content, 'html.parser')
         archive_year = soup_year.find('ul', attrs={'class': 'auto_archive'})
         daily_links = ['http://www.who.int' + link.get('href') for link in archive_year.find_all('a')]
@@ -47,26 +74,3 @@ def load_params():
     path = os.path.join("pickles", "scraping_params.p")
     return pickle.load(open(path, "rb"))
 
-
-def scrape(years=None,
-           months=None,
-           num_last_reports=None,
-           headers=None,
-           proxies=None,
-           use_pickle=False):
-    """Scrapes the WHO DONs using the WHO DON scraping functions and returns the links to these DONs
-
-    years -- a list of strings of years in the format YYYY to be scraped
-    months -- a list of strings of months in the format MMM* to be scraped
-    num_list_reports -- an integer to specify how many of the last reports should be scraped.
-    can be combined with the specification of year and/or month
-    headers -- use a header for scraping
-    proxies -- the proxy to use while scraping
-    """
-    if use_pickle:
-        headers = load_params()["headers"]
-        proxies = load_params()["proxies"]
-
-    years = get_links_by_year(list_of_years=years, proxies=proxies)
-    all_links = get_links_per_year(years, list_of_months=months, proxies=proxies)
-    return all_links
