@@ -13,7 +13,6 @@ from .wiki_disease_parser import translate_disease_name
 
 def get_cleaned_edb(clean=None, reduced=True, unprocessed=False, path=None):
     """
-
     Returns:
         pd.DataFrame: formatted edb
         if reduce drop columns unnecessary for analysis
@@ -39,6 +38,7 @@ def read_cleaned_edb(path=None):
         dirname = os.path.dirname(__file__)
         path = os.path.join(dirname, 'data', 'edb.csv')
     edb = pd.read_csv(path, sep=";")
+    edb = edb.replace('nan', None)
     edb = edb.dropna(how="all").reset_index(drop=True)
     edb.columns = list(map(lambda x: x.strip(), edb.columns))
     return edb
