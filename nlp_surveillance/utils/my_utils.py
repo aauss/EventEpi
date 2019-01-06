@@ -1,12 +1,9 @@
 import pandas as pd
-import tika
 import re
 import unicodedata
-from tika import parser
+import urllib.request
+
 from SPARQLWrapper import SPARQLWrapper, JSON
-from tqdm import tqdm
-from boilerpipe.extract import Extractor
-tika.TikaClientOnly = True
 
 
 def flatten_list(list_2d):
@@ -30,19 +27,6 @@ def matching_elements(l1, l2):
     return matches
 
 
-def extract_from_url(url):
-    """Extracts the main content from a list of links and returns a list of texts (str)
-
-    list_of_links -- a list containing URLs of webpages to get the main content from
-    """
-    return Extractor(extractor='ArticleExtractor', url=str(url)).getText()
-
-
-def extract_from_pdf(url):
-    raw = parser.from_file(url)
-    return raw['content'].replace('�', '')
-
-
 def get_results_sparql(endpoint_url, query):
     sparql = SPARQLWrapper(endpoint_url)
     sparql.setQuery(query)
@@ -51,16 +35,30 @@ def get_results_sparql(endpoint_url, query):
     return df.applymap(lambda x: x['value'] if isinstance(x, dict) else x)
 
 
+def try_if_connection_is_possible():
+    try:
+        urllib.request.urlopen('http://www.google.com', timeout=3)
+        return True
+    except urllib.request.URLError:
+        return False
+
+
 def remove_nans(to_clean):
+    if not isinstance(to_clean, list):
+        to_clean = [to_clean]
     return [entry for entry in to_clean if str(entry).lower() != 'nan']
 
 
 def remove_guillemets(string):
-    return re.sub(r'[<>]', '', string)
+    # Remove the first and last guillemets. Found in URLs of edb
+    string = re.sub(r'<', '', string, 1)
+    string = re.sub(r'>', '', string[::-1], 1)
+    return string[::-1]
 
 
 def remove_control_characters(string):
-    return "".join(char for char in string if unicodedata.category(char)[0] != "C")
+    string = "".join(char for char in string if unicodedata.category(char)[0] != "C")
+    return re.sub(r'(\s){2,}', ' ', string)
 
 
 def get_sentence_from_annotated_span(annotated_span, text):
@@ -72,7 +70,7 @@ def get_sentence_from_annotated_span(annotated_span, text):
 
 
 def check_url_validity(url):
-    # From django
+    # Inspired from django
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
