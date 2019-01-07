@@ -5,6 +5,7 @@ import re
 import os
 import warnings
 import pandas as pd
+import numpy as np
 from didyoumean import didyoumean
 from datetime import datetime
 from .wiki_country_parser import get_wiki_countries_df
@@ -18,12 +19,12 @@ def get_cleaned_edb(clean=None, reduced=True, unprocessed=False, path=None):
         if reduce drop columns unnecessary for analysis
     """
     if clean is None:
-        clean = [(edb_to_timestamp, [7, 8, 10, 16, 19, 22, 25, 34]),
+        clean = [(edb_to_timestamp, [7, 8, 10, 11, 16, 19, 22, 25, 34]),
                  (translate_geonames, [3, 4]),
                  (translate_disease_name, [6])]
     if not isinstance(clean, list):
         clean = [clean]
-    edb = read_cleaned_edb(path=path)
+    edb = read_minimal_cleaned_edb(path=path)
     if not unprocessed:
         for funct, columns in clean:
             edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
@@ -33,7 +34,7 @@ def get_cleaned_edb(clean=None, reduced=True, unprocessed=False, path=None):
     return edb
 
 
-def read_cleaned_edb(path=None):
+def read_minimal_cleaned_edb(path=None):
     if path is None:
         dirname = os.path.dirname(__file__)
         path = os.path.join(dirname, 'data', 'edb.csv')
@@ -58,6 +59,8 @@ def edb_to_timestamp(date):
             date = datetime.strptime(date_try_format, '%d %m %Y').strftime("%Y-%m-%d")
         except ValueError:
             warnings.warn('"{}" is not an existing date. Please change it'.format(date))
+    else:
+        date = np.nan
     return date
 
 
