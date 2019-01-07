@@ -5,7 +5,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from .utils.my_utils import try_if_connection_is_possible
-from .utils.text_from_url import extract_text_from_html_webpage
+from .utils.text_from_url import extract_cleaned_text_from_html_webpage
 from .annotator import geonames, dates, keywords, cases, create_annotated_database
 
 
@@ -13,7 +13,7 @@ def get_annotated_2018_whos(entity_funcs_and_params=None):
     path = os.path.join(os.path.dirname(__file__), "pickles", "parsed_who_df.p")
     if not os.path.isfile(path):
         all_links = scrape(years=['2018'])
-        extracted = list(map(lambda x: extract_text_from_html_webpage(x), all_links))
+        extracted = list(map(lambda x: extract_cleaned_text_from_html_webpage(x), all_links))
         if entity_funcs_and_params is None:
             entity_funcs_and_params = [(geonames, {"raw": True}),
                                        (cases, {"raw": True}),
