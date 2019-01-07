@@ -23,8 +23,14 @@ def flatten_list(list_2d):
 
 
 def split_and_flatten_list(to_split_and_flatten):
-    return flatten_list(list(map(lambda x: x.split() if isinstance(x, str) else x,
-                                 to_split_and_flatten)))
+    # split, strip and then flatten
+    return flatten_list(list(map(
+                                lambda x: list(map(
+                                    lambda y: y.strip(),
+                                    x.split(',')))
+                                if isinstance(x, str)
+                                else x,
+                                to_split_and_flatten)))
 
 
 def matching_elements(l1, l2):
@@ -59,8 +65,11 @@ def remove_nans(to_clean):
 
 def remove_guillemets(string):
     # Remove the first and last guillemets. Found in URLs of edb
-    string = re.sub(r'<', '', string, 1)
-    string = re.sub(r'>', '', string[::-1], 1)
+    try:
+        string = re.sub(r'<', '', string, 1)
+        string = re.sub(r'>', '', string[::-1], 1)
+    except TypeError:
+        print(string, ' caused type error')
     return string[::-1]
 
 
