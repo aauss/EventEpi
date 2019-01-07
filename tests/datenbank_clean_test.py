@@ -36,8 +36,10 @@ def test_geoname_translation():
 def test_edb_to_timestamp():
     example_to_timestamp = ['28.06.2018\nSechs Kühe auf einem Bauernhof gestorben.', '23.6.2018 1. Todesfall',
                             'Mai 2018', '08.09.2017', '32.12.2017']
-    expected_result_to_timestamp = ["2018-06-28", '2018-06-23', 'Mai 2018', '2017-09-08', '32.12.2017']
-    assert deep_eq([edb_to_timestamp(time) for time in example_to_timestamp], expected_result_to_timestamp)
+    to_timestamp = [edb_to_timestamp(time) for time in example_to_timestamp]
+    to_timestamp_changed_nan = ['nan' if i is np.nan else i for i in to_timestamp]
+    expected_result_to_timestamp = ["2018-06-28", '2018-06-23', 'nan', '2017-09-08', '32.12.2017']
+    assert deep_eq(to_timestamp_changed_nan, expected_result_to_timestamp)
 
 
 def test_translate_disease_name():
