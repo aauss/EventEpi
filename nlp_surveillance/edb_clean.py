@@ -6,6 +6,7 @@ import os
 import warnings
 import pandas as pd
 import numpy as np
+import pickle
 from didyoumean import didyoumean
 from datetime import datetime
 from .wiki_country_parser import get_wiki_countries_df
@@ -18,20 +19,26 @@ def get_cleaned_edb(clean=None, reduced=True, unprocessed=False, path=None):
         pd.DataFrame: formatted edb
         if reduce drop columns unnecessary for analysis
     """
-    if clean is None:
-        clean = [(edb_to_timestamp, [7, 8, 10, 11, 16, 19, 22, 25, 34]),
-                 (translate_geonames, [3, 4]),
-                 (translate_disease_name, [6])]
-    if not isinstance(clean, list):
-        clean = [clean]
-    edb = read_minimal_cleaned_edb(path=path)
-    if not unprocessed:
-        for funct, columns in clean:
-            edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
-    if reduced:
-        to_drop = edb.iloc[:, [0, 1, 2, 5, 7, 8, 27, 28, 29, 30, 31, 32, 33, 34, 35]].columns.tolist()
-        edb = edb.drop(to_drop, axis=1)
-    return edb
+    pickle_path = os.path.join(os.path.dirname(__file__), 'pickles', 'cleaned_edb.p')
+    if os.path.isfile(pickle_path):
+        return pickle.load(open(path, 'rb'))
+    else:
+
+        if clean is None:
+            clean = [(edb_to_timestamp, [7, 8, 10, 11, 16, 19, 22, 25, 34]),
+                     (translate_geonames, [3, 4]),
+                     (translate_disease_name, [6])]
+        if not isinstance(clean, list):
+            clean = [clean]
+        edb = read_minimal_cleaned_edb(path=path)
+        if not unprocessed:
+            for funct, columns in clean:
+                edb.iloc[:, columns] = edb.iloc[:, columns].applymap(funct)
+        if reduced:
+            to_drop = edb.iloc[:, [0, 1, 2, 5, 7, 8, 27, 28, 29, 30, 31, 32, 33, 34, 35]].columns.tolist()
+            edb = edb.drop(to_drop, axis=1)
+        pickle.dump(edb, open(pickle_path, 'wb'))
+        return edb
 
 
 def read_minimal_cleaned_edb(path=None):
