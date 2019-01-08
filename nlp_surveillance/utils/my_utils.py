@@ -52,7 +52,7 @@ def get_results_sparql(endpoint_url, query):
 
 def try_if_connection_is_possible():
     try:
-        urllib.request.urlopen('http://www.google.com', timeout=3)
+        urllib.request.urlopen('https://www.rki.de/DE/Home/homepage_node.html', timeout=4)
         return True
     except urllib.request.URLError:
         return False
@@ -80,9 +80,10 @@ def remove_control_characters(string):
     return re.sub(r'(\s){2,}', ' ', string)
 
 
-def get_sentence_and_date_from_annotated_span(annotated_span, text):
+def get_sentence_and_date_from_annotated_span(annotated_span, anno):
     # Get the first and last occurrence the end of a sentence to create a window for slicing.
     # Slice text. -1 is used to omit trailing whitespace and + 2 to include the last period.
+    text = anno.text
     start_of_text = re.search("(?s:.*)\S\.\s[A-Z]", text[:annotated_span.start]).span()[1]
     end_of_text = re.search(r'\S\.\s[A-Z]', text[annotated_span.end:]).span()[0]
     return text[start_of_text-1:annotated_span.end+end_of_text+2], annotated_span.datetime_range
