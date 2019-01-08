@@ -5,6 +5,7 @@ from boilerpipe.extract import Extractor
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import names, stopwords
 from nltk.tokenize import word_tokenize
+from urllib.error import URLError
 
 from.my_utils import remove_control_characters
 
@@ -20,16 +21,24 @@ def extract_cleaned_text_from_url(url):
 
 def extract_cleaned_text_from_pdf(url):
     # Extract text from pdf and also remove unrecognized symbols
-    log = logging.getLogger('tika.tika')
-    log.disabled = True
-    raw = parser.from_file(url)
-    text = raw['content'].replace('�', '')
+    try:
+        log = logging.getLogger('tika.tika')
+        log.disabled = True
+        raw = parser.from_file(url)
+        text = raw['content'].replace('�', '')
+    except URLError as e:
+        print('{url} caused {e}'.format(url=url, e=e))
+        text = ""
     return text
 
 
 def extract_cleaned_text_from_html_webpage(url):
     # Use boilerpipe to extract main text from url
-    text = Extractor(extractor='ArticleExtractor', url=str(url)).getText()
+    try:
+        text = Extractor(extractor='ArticleExtractor', url=str(url)).getText()
+    except (UnicodeDecodeError, URLError) as e:
+        print('{url} caused {e}'.format(url=url, e=e))
+        text = ""
     return text
 
 
