@@ -78,12 +78,12 @@ def remove_control_characters(string):
     return re.sub(r'(\s){2,}', ' ', string)
 
 
-def get_sentence_from_annotated_span(annotated_span, text):
+def get_sentence_and_date_from_annotated_span(annotated_span, text):
     # Get the first and last occurrence the end of a sentence to create a window for slicing.
     # Slice text. -1 is used to omit trailing whitespace and + 2 to include the last period.
     start_of_text = re.search("(?s:.*)\S\.\s[A-Z]", text[:annotated_span.start]).span()[1]
     end_of_text = re.search(r'\S\.\s[A-Z]', text[annotated_span.end:]).span()[0]
-    return text[start_of_text-1:annotated_span.end+end_of_text+2]
+    return text[start_of_text-1:annotated_span.end+end_of_text+2], annotated_span.datetime_range
 
 
 def check_url_validity(url):
