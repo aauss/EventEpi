@@ -21,7 +21,7 @@ def get_cleaned_edb(clean=None, reduced=True, unprocessed=False, path=None):
     """
     pickle_path = os.path.join(os.path.dirname(__file__), 'pickles', 'cleaned_edb.p')
     if os.path.isfile(pickle_path):
-        return pickle.load(open(path, 'rb'))
+        return pickle.load(open(pickle_path, 'rb'))
     else:
 
         if clean is None:
