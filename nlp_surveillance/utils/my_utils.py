@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import re
 import unicodedata
 import urllib.request
@@ -68,9 +69,10 @@ def remove_guillemets(string):
     try:
         string = re.sub(r'<', '', string, 1)
         string = re.sub(r'>', '', string[::-1], 1)
+        string = string[::-1]
     except TypeError:
-        print(string, ' caused type error')
-    return string[::-1]
+        string = np.nan
+    return string
 
 
 def remove_control_characters(string):
@@ -86,6 +88,10 @@ def get_sentence_and_date_from_annotated_span(annotated_span, text):
     return text[start_of_text-1:annotated_span.end+end_of_text+2], annotated_span.datetime_range
 
 
+def convert_open_epitator_range_to_smaller_range(annotated_span):
+    pass
+
+
 def check_url_validity(url):
     # Inspired from django
     regex = re.compile(
@@ -95,4 +101,8 @@ def check_url_validity(url):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return re.match(regex, url) is not None
+    try:
+        is_valid_url = re.match(regex, url) is not None
+        return is_valid_url
+    except TypeError:
+        return False
