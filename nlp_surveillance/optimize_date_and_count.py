@@ -5,7 +5,7 @@ import pandas as pd
 import urllib.error
 from datetime import datetime
 from tqdm import tqdm_notebook as tqdm
-
+from pandas.errors import OutOfBoundsDatetime
 from .utils.my_utils import (remove_nans,
                              check_url_validity,
                              remove_guillemets,
@@ -19,13 +19,18 @@ from .annotator import annotate
 def get_date_optimization_edb(edb=None):
     if edb is None:
         edb = get_cleaned_edb()
-
-    edb_links_combined = _get_edb_with_combined_link_columns(edb)
-    date_optimization_edb = _get_optimization_edb(edb_links_combined, to_optimize='date')
-    date_optimization_edb_extracted_text = _extract_text_from_edb_urls(date_optimization_edb)
-    date_optimization_edb_with_annos = _annotate_text_in_edb(date_optimization_edb_extracted_text)
-    date_optimization_edb_extracted_sentences = _extract_sentences_from_spans(date_optimization_edb_with_annos)
-    return date_optimization_edb_with_annos
+    path = os.path.join(os.path.dirname(__file__), 'pickles', 'date_opt_edb.p')
+    if os.path.isfile(path):
+        return pickle.load(open(path, 'rb'))
+    else:
+        edb_links_combined = _get_edb_with_combined_link_columns(edb)
+        date_optimization_edb = _get_optimization_edb(edb_links_combined, to_optimize='date')
+        date_optimization_edb_extracted_text = _extract_text_from_edb_urls(date_optimization_edb)
+        date_optimization_edb_with_annos = _annotate_text_in_edb(date_optimization_edb_extracted_text)
+        date_optimization_edb_extracted_sentences = _extract_sentences_from_spans(date_optimization_edb_with_annos)
+        date_optimization_edb_extracted_sentences = date_optimization_edb_extracted_sentences.dropna(axis='rows')
+        pickle.dump(date_optimization_edb_extracted_sentences, open(path, 'wb'))
+    return date_optimization_edb_extracted_sentences
 
 
 def _get_edb_with_combined_link_columns(edb):
@@ -42,8 +47,8 @@ def _get_optimization_edb(edb, to_optimize):
     if to_optimize == 'date':
         edb = edb[edb['Datenstand für Fallzahlen gesamt*'].notna()]
         edb = edb[['Datenstand für Fallzahlen gesamt*', 'links']]
-        edb['Datenstand für Fallzahlen gesamt*'] = edb['Datenstand für Fallzahlen gesamt*'].apply(
-                                                        lambda x: datetime.strptime(x, '%Y-%m-%d'))
+        edb['Datenstand für Fallzahlen gesamt*'] = pd.to_datetime(edb['Datenstand für Fallzahlen gesamt*'].apply(
+                                                        lambda x: datetime.strptime(x, '%Y-%m-%d')))
     else:
         edb = edb  # placeholder for count optimized edb
     return edb
@@ -55,7 +60,7 @@ def _extract_text_from_edb_urls(edb, disable_tqdm=False):
     path = os.path.join(file_dir, 'pickles', 'edb_with_text.p')
     if not os.path.exists(path):
         edb_with_text = pd.DataFrame(columns=['Datenstand für Fallzahlen gesamt*', 'links', 'text'])
-        for i, urls in enumerate(tqdm(edb['links'], disable=disable_tqdm)):
+        for i, urls in enumerate(tqdm(edb['links'], disable=disable_tqdm, postfix='Extract text from link')):
             for j, url in enumerate(urls):
                 edb_with_text = _try_to_extract_text_from_url_and_fill_edb_with_text(edb, edb_with_text, url, i)
         pickle.dump(edb_with_text, open(path, 'wb'))
@@ -66,7 +71,7 @@ def _extract_text_from_edb_urls(edb, disable_tqdm=False):
 
 def _annotate_text_in_edb(edb):
     annos = pd.Series(np.zeros(len(edb)))
-    for i, text in enumerate(tqdm(edb['text'])):
+    for i, text in enumerate(tqdm(edb['text'], postfix='Annotate text')):
         annotated = annotate(text, tiers='DateAnnotator()')
         annos.loc[i] = annotated
     edb['annotated'] = annos
@@ -75,30 +80,33 @@ def _annotate_text_in_edb(edb):
 
 def _extract_sentences_from_spans(edb, drop_annotated=True):
     edb_with_sentences = pd.DataFrame(columns=['Datenstand für Fallzahlen gesamt*',
-                                               'date_from_sentence',
+                                               'from',
+                                               'to',
                                                'sentence'])
-    for i, row in tqdm(edb[['Datenstand für Fallzahlen gesamt*', 'text', 'annotated']].iterrows(), total=edb.shape[0]):
-        target_date, text, anno = row
+    for i, row in tqdm(edb[['Datenstand für Fallzahlen gesamt*', 'annotated']].iterrows(),
+                       total=edb.shape[0],
+                       postfix='Extract sentences and dates from spans'):
+        target_date, anno = row
         for span in anno.tiers['dates'].spans:
-            try:
-                sentence, date_in_sentence = get_sentence_and_date_from_annotated_span(span, text)
-            except AttributeError:
-                sentence, date_in_sentence = (np.nan, np.nan)
+            sentence, date_in_sentence = _try_extract_sentences(span, anno)
+            _from = _try_to_convert_to_timestamp(date_in_sentence[0])
+            _to = _try_to_convert_to_timestamp(date_in_sentence[1])
             to_append = pd.Series({'Datenstand für Fallzahlen gesamt*': target_date,
-                                   'date_from_sentence': date_in_sentence,
+                                   'from': pd.to_datetime(_from),
+                                   'to': pd.to_datetime(_to),
                                    'sentence': sentence})
             edb_with_sentences = edb_with_sentences.append(to_append, ignore_index=True)
     if not drop_annotated:
-        edb_with_sentences['annotated'] = edb['annotated'] # AnnoDocs cannot be pickled, so I drop them
+        edb_with_sentences['annotated'] = edb['annotated']  # AnnoDocs cannot be pickled, so I drop them
     return edb_with_sentences
 
 
-def _try_extract_sentences(text, date_span):
+def _try_extract_sentences(span, anno):
     try:
-        date_sentences = get_sentence_and_date_from_annotated_span(date_span, text)
-    except AttributeError:
-        date_sentences = []  # Occurs when sentences is empty
-    return date_sentences
+        date_sentences, date_range = get_sentence_and_date_from_annotated_span(span, anno)
+    except AttributeError as e:
+        date_sentences, date_range = ([], [np.nan, np.nan])  # Occurs when sentences is empty
+    return date_sentences, date_range
 
 
 def _try_to_extract_text_from_url_and_fill_edb_with_text(edb, edb_with_text, url, i):
@@ -118,8 +126,8 @@ def _remove_invalid_urls(edb):
     # Valid URL
     edb['links'] = edb['links'].apply(remove_nans)
     edb['links'] = edb['links'].apply(_only_keep_valid_urls)
-    valid_target_and_example_edb = edb.reset_index(drop=True)
-    return valid_target_and_example_edb
+    valid_url_edb = edb.reset_index(drop=True)
+    return valid_url_edb
 
 
 def _create_new_row(date, link, text_extracted):
@@ -132,3 +140,10 @@ def _only_keep_valid_urls(list_of_urls):
     removed_guillemets = map(remove_guillemets, list_of_urls)
     valid_urls = filter(check_url_validity, removed_guillemets)
     return list(valid_urls)
+
+
+def _try_to_convert_to_timestamp(datetime_obj):
+    try:
+        return pd.to_datetime(datetime_obj)
+    except OutOfBoundsDatetime:
+        return np.nan
