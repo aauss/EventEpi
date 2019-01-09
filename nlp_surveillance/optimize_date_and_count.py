@@ -16,21 +16,33 @@ from .edb_clean import get_cleaned_edb
 from .annotator import annotate
 
 
-def get_date_optimization_edb(edb=None):
+def get_date_optimization_edb(edb=None, use_pickle=True, filter_margin='1day', label_margin='2days'):
     if edb is None:
         edb = get_cleaned_edb()
     path = os.path.join(os.path.dirname(__file__), 'pickles', 'date_opt_edb.p')
-    if os.path.isfile(path):
-        return pickle.load(open(path, 'rb'))
+    if os.path.isfile(path) and use_pickle:
+        date_optimization_edb_without_labels = pickle.load(open(path, 'rb'))
+        complete_date_optimization_edb = _add_labels_and_clear_edb(date_optimization_edb_without_labels,
+                                                                   filter_margin,
+                                                                   label_margin)
+        return complete_date_optimization_edb
     else:
         edb_links_combined = _get_edb_with_combined_link_columns(edb)
         date_optimization_edb = _get_optimization_edb(edb_links_combined, to_optimize='date')
         date_optimization_edb_extracted_text = _extract_text_from_edb_urls(date_optimization_edb)
         date_optimization_edb_with_annos = _annotate_text_in_edb(date_optimization_edb_extracted_text)
         date_optimization_edb_extracted_sentences = _extract_sentences_from_spans(date_optimization_edb_with_annos)
-        date_optimization_edb_extracted_sentences = date_optimization_edb_extracted_sentences.dropna(axis='rows')
         pickle.dump(date_optimization_edb_extracted_sentences, open(path, 'wb'))
-    return date_optimization_edb_extracted_sentences
+        complete_date_optimization_edb = _add_labels_and_clear_edb(date_optimization_edb_extracted_sentences,
+                                                                   filter_margin,
+                                                                   label_margin)
+    return complete_date_optimization_edb
+
+
+def _add_labels_and_clear_edb(edb, filter_margin, label_margin):
+    date_optimization_filtered = _filter_too_broad_annotated_time_spans(edb, filter_margin)
+    date_optimization_edb_with_labels = _assign_label_and_drop_dates(date_optimization_filtered, label_margin)
+    return date_optimization_edb_with_labels.dropna(axis='rows')
 
 
 def _get_edb_with_combined_link_columns(edb):
@@ -101,10 +113,21 @@ def _extract_sentences_from_spans(edb, drop_annotated=True):
     return edb_with_sentences
 
 
+def _filter_too_broad_annotated_time_spans(edb, allowed_margin):
+    return edb[edb['to'] - edb['from'] <= pd.Timedelta(allowed_margin)]
+
+
+def _assign_label_and_drop_dates(edb, allowed_margin):
+    is_in_time_range = (((edb['from'] - pd.Timedelta(allowed_margin)) <= edb['Datenstand für Fallzahlen gesamt*'])
+                        & ((edb['to'] + pd.Timedelta(allowed_margin)) >= edb['Datenstand für Fallzahlen gesamt*']))
+    edb = edb.assign(is_label=is_in_time_range)
+    return edb[['sentence', 'is_label']]
+
+
 def _try_extract_sentences(span, anno):
     try:
         date_sentences, date_range = get_sentence_and_date_from_annotated_span(span, anno)
-    except AttributeError as e:
+    except AttributeError:
         date_sentences, date_range = ([], [np.nan, np.nan])  # Occurs when sentences is empty
     return date_sentences, date_range
 
