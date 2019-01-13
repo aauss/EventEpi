@@ -271,4 +271,4 @@ class TrainNaiveBayes(luigi.Task):
 
 
 if __name__ == '__main__':
-    luigi.build([TrainNaiveBayes('date')])
+    luigi.build([TrainNaiveBayes('date')], local_scheduler=True)
