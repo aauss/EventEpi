@@ -8,11 +8,13 @@ from pytz.exceptions import UnknownTimeZoneError
 
 def read_cleaned(path=None):
     event_db = _read_unprocessed(path=path)
-    event_db_dropped = _rename_and_drop_unused_columns(event_db)
-    event_db_nans = _format_missing_data(event_db_dropped)
-    event_db_time_format = _to_datetime(event_db_nans)
-    event_db_count_format = _clean_count(event_db_time_format)
-    return event_db_count_format
+    preprocessed_event_db = (event_db
+                             .pipe(_rename_and_drop_unused_columns)
+                             .pipe(_format_missing_data)
+                             .pipe(_to_datetime)
+                             .pipe(_clean_counts)
+                             .pipe(_clean_country))
+    return preprocessed_event_db
 
 
 def _read_unprocessed(path=None):
@@ -56,10 +58,34 @@ def _to_datetime(event_db):
     return event_db
 
 
-def _clean_count(event_db):
+def _clean_counts(event_db):
     event_db.count_edb = event_db.count_edb.replace(['.', '.'], ['', ''])
     event_db.count_edb = event_db.count_edb.apply(_keep_only_integers)
     return event_db
+
+
+def _clean_country(event_db):
+    event_db.country_edb = event_db.country_edb.apply(_clean_country_str)
+    # TODO: Denke über das auffächern nach, wenn ein eintrag ein komma hat
+    return event_db
+
+
+def _clean_country_str(country):
+    if isinstance(country, str):
+        cardinal_dir = re.compile(r"(Süd|Nord|West|Ost)\s(\S*)")
+        country = re.sub(r'\n', ', ', country)
+        country = re.sub(r',,', ',', country)  # Because the line above adds one comma to much
+        country = re.sub(r'\(.*\)', "", country)
+        country = country.replace("&", "und")
+        country = country.replace("_", " ")
+        country = country.strip(" ")
+        if cardinal_dir.match(country) and country.lower() != 'korea':
+            # Except for korea, in German, cardinal direction and country name are written separately
+            try:
+                country = cardinal_dir.match(country)[1] + cardinal_dir.match(country)[2].lower()
+            except IndexError:
+                warnings.warn('Problems with processing country string with cardinal direction in name')
+    return country
 
 
 def _keep_only_integers(string_with_int):
