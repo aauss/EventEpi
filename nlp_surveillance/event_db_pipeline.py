@@ -1,7 +1,11 @@
 import luigi
 import pickle
 
-import event_db
+from .event_db_preprocessing import event_db
+from .wikipedia_list_of_countries.scraper import scrape_wikipedia_countries
+from .wikipedia_list_of_countries.cleaner import clean_wikipedia_countries
+from .wikipedia_list_of_countries.custom_abbreviations import abbreviate_wikipedia_country_df
+from .wikidata_disease_names.query import get_wikidata_disease_df
 
 
 class CleanEventDB(luigi.Task):
@@ -10,8 +14,8 @@ class CleanEventDB(luigi.Task):
         return luigi.LocalTarget('data/event_db/cleaned.pkl', format=luigi.format.Nop)
 
     def run(self):
+        cleaned_event_db = event_db.read_cleaned()
         with self.output().open('w') as handler:
-            cleaned_event_db = event_db.read_cleaned()
             pickle.dump(cleaned_event_db, handler)
 
 
@@ -21,9 +25,9 @@ class RequestDiseaseNamesFromWikiData(luigi.Task):
         return luigi.LocalTarget('data/disease_lookup_without_abbreviation.pkl', format=luigi.format.Nop)
 
     def run(self):
+        disease_lookup = get_wikidata_disease_df()
         with self.output().open('w') as handler:
-            TOWRITE = 'lol'
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(disease_lookup, handler)
 
 
 class ScrapeCountryNamesFromWikipedia(luigi.Task):
@@ -32,9 +36,9 @@ class ScrapeCountryNamesFromWikipedia(luigi.Task):
         return luigi.LocalTarget('data/country_lookup_without_abbreviation.pkl', format=luigi.format.Nop)
 
     def run(self):
+        country_lookup = scrape_wikipedia_countries()
         with self.output().open('w') as handler:
-            TOWRITE = 'lol'
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(country_lookup, handler)
 
 
 class CleanCountryLookUpAndAddAbbreviations(luigi.Task):
@@ -46,11 +50,12 @@ class CleanCountryLookUpAndAddAbbreviations(luigi.Task):
 
     def run(self):
         with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
+            country_lookup = pickle.load(handler)
+        clean_country_lookup = clean_wikipedia_countries(country_lookup)
+        custom_abbreviated_country_lookup = abbreviate_wikipedia_country_df(clean_country_lookup)
+
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(custom_abbreviated_country_lookup, handler)
 
 
 class MergeDiseaseNameLookupWithDiseaseCodeOfRKI(luigi.Task):
