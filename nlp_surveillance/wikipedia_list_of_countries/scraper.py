@@ -6,7 +6,7 @@ import sys
 from bs4 import BeautifulSoup
 
 
-def scrape_wiki_countries():
+def scrape_wikipedia_countries():
     """Scrapes German Wikipedia article of list of states of the earth and returns dict with entries."""
     soup = _get_soup()
     wiki_dict = {"state_name_de": [],
@@ -60,21 +60,6 @@ def _extract_column_from_soup(soup, is_state_name_de=False):
 def _extract_abbreviation_from_soup(soup):
     abbreviation = soup.text.replace("\n", "")
     return abbreviation
-
-
-def _remove__footnotes_dashes_and_brackets(wiki_df):
-    wiki_df_without_brackets = wiki_df.applymap(lambda x: re.sub(r"\(.*\)", " ", str(x)))
-    wiki_df_wihout_footnotes = wiki_df_without_brackets.applymap(lambda x: re.sub(r'\[\d*\]', "", x))
-    wiki_df_without_dash = wiki_df_wihout_footnotes.applymap(_replace_wiki_dash_with_none)
-    return wiki_df_without_dash
-
-
-def _replace_wiki_dash_with_none(string):
-    dash = u"\u2014"  # Used dash for missing entry in Wikipedia table
-    if dash == string:
-        return None
-    else:
-        return string
 
 
 def _reorder_words_in_names_with_comma(country_name):
