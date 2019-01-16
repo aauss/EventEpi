@@ -21,7 +21,7 @@ def read_cleaned(path=None):
 def _read_unprocessed(path=None):
     if path is None:
         dirname = os.path.dirname(__file__)
-        path = os.path.join(dirname, 'data', 'event_db', 'edb.csv')
+        path = os.path.join(dirname, '..', '..', 'data', 'rki', 'edb.csv')
     event_db = pd.read_csv(path, sep=';')
     event_db.columns = list(map(lambda x: x.strip(), event_db))
     return event_db
