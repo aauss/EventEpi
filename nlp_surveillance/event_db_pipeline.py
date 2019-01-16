@@ -1,6 +1,8 @@
 import luigi
 import pickle
 
+import event_db
+
 
 class CleanEventDB(luigi.Task):
 
@@ -9,8 +11,8 @@ class CleanEventDB(luigi.Task):
 
     def run(self):
         with self.output().open('w') as handler:
-            TOWRITE = 'lol'
-            pickle.dump(TOWRITE, handler)
+            cleaned_event_db = event_db.read_cleaned()
+            pickle.dump(cleaned_event_db, handler)
 
 
 class RequestDiseaseNamesFromWikiData(luigi.Task):
