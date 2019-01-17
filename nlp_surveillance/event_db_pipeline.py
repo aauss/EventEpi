@@ -26,7 +26,6 @@ class CleanEventDB(LuigiTaskWithDataOutput):
         return luigi.LocalTarget(format_path('../data/event_db/cleaned.pkl'), format=luigi.format.Nop)
 
     def run(self):
-        print(__file__, '======================================')
         cleaned_event_db = event_db.read_cleaned()
         with self.output().open('w') as handler:
             pickle.dump(cleaned_event_db, handler)
