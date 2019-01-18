@@ -4,7 +4,7 @@ import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 
-def get_wikidata_disease_df():
+def disease_name_query():
     endpoint_url = "https://query.wikidata.org/sparql"
     query = """SELECT Distinct ?itemLabel_DE   ?itemLabel_EN WHERE {
                     ?item wdt:P31 wd:Q12136.
