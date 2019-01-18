@@ -4,14 +4,14 @@ import pandas as pd
 
 def to_translation_dict(country_lookup_df):
     columns = country_lookup_df.columns
-    directions_to_translate_to = [('translation_state_name', other_column)
+    directions_to_translate_to = [(other_column, 'translation_state_name')
                                   for other_column in columns]
     lists_of_translation_tuples = [list(zip(country_lookup_df[from_lang_x], country_lookup_df[to_lang_y]))
                                    for from_lang_x, to_lang_y in directions_to_translate_to]
     flattened = [item for sublist in lists_of_translation_tuples for item in sublist]
     country_lookup_dict = dict(flattened)
-    country_lookup_wihtou_nones = {k: v for k, v in country_lookup_dict.items() if None not in [k, v]}
-    return country_lookup_wihtou_nones
+    country_lookup_withou_nones = {k: v for k, v in country_lookup_dict.items() if None not in [k, v]}
+    return country_lookup_withou_nones
 
 
 def clean_wikipedia_countries(wikipedia_country_df):
