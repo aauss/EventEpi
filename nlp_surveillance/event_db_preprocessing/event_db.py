@@ -5,6 +5,7 @@ import pandas as pd
 from ._clean_dates import to_datetime
 from ._clean_counts import clean_counts
 from ._clean_countries import clean_countries
+from ._clean_diseases import clean_diseases
 
 
 def read_cleaned(path=None):
@@ -14,7 +15,8 @@ def read_cleaned(path=None):
                              .pipe(_format_missing_data)
                              .pipe(to_datetime)
                              .pipe(clean_counts)
-                             .pipe(clean_countries))
+                             .pipe(clean_countries)
+                             .pipe(clean_diseases))
     return preprocessed_event_db
 
 
@@ -42,7 +44,8 @@ def _rename_and_drop_unused_columns(event_db):
 
 def _format_missing_data(event_db):
     str_columns = ['country_edb', 'disease_edb', 'URL_1', 'URL_2', 'URL_3', 'URL_4']
-    event_db.loc[:, str_columns] = event_db.loc[:, str_columns].replace(['nan', '-', np.nan], [None] * 3)
+    event_db.loc[:, str_columns] = event_db.loc[:, str_columns].replace(['nan', '-', np.nan, '', '?', 'keine'],
+                                                                        [None] * 6)
 
     numerical_columns = ['count_edb', 'date_of_data']
     event_db.loc[:, numerical_columns] = event_db.loc[:, numerical_columns].replace(['nan', '-'], [np.nan] * 2)
