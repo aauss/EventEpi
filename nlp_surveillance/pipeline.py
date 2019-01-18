@@ -4,11 +4,13 @@ import os
 
 from nlp_surveillance.event_db_preprocessing import event_db
 from nlp_surveillance.wikipedia_list_of_countries.scraper import scrape_wikipedia_countries
-from nlp_surveillance.wikipedia_list_of_countries.cleaner import clean_wikipedia_countries
-from nlp_surveillance.wikipedia_list_of_countries.custom_abbreviations import abbreviate_wikipedia_country_df
-from nlp_surveillance.wikidata_disease_names.query import get_wikidata_disease_df
+from nlp_surveillance.wikipedia_list_of_countries.lookup import (clean_wikipedia_countries,
+                                                                 abbreviate_wikipedia_country_df,
+                                                                 to_translation_dict)
+from nlp_surveillance.wikidata_disease_names.wikidata import disease_name_query
 from nlp_surveillance.wikidata_disease_names.rki_abbreviations import get_rki_abbreviations
-from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup
+from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_as_dict
+from nlp_surveillance.translate import diseases, country
 
 
 class LuigiTaskWithDataOutput(luigi.Task):
@@ -38,7 +40,7 @@ class RequestDiseaseNamesFromWikiData(LuigiTaskWithDataOutput):
                                  format=luigi.format.Nop)
 
     def run(self):
-        disease_lookup = get_wikidata_disease_df()
+        disease_lookup = disease_name_query()
         with self.output().open('w') as handler:
             pickle.dump(disease_lookup, handler)
 
@@ -67,9 +69,10 @@ class CleanCountryLookUpAndAddAbbreviations(LuigiTaskWithDataOutput):
             country_lookup = pickle.load(handler)
         clean_country_lookup = clean_wikipedia_countries(country_lookup)
         custom_abbreviated_country_lookup = abbreviate_wikipedia_country_df(clean_country_lookup)
+        country_lookup = to_translation_dict(custom_abbreviated_country_lookup)
 
         with self.output().open('w') as handler:
-            pickle.dump(custom_abbreviated_country_lookup, handler)
+            pickle.dump(country_lookup, handler)
 
 
 class MergeDiseaseNameLookupWithAbbreviationsOfRKI(LuigiTaskWithDataOutput):
@@ -84,7 +87,7 @@ class MergeDiseaseNameLookupWithAbbreviationsOfRKI(LuigiTaskWithDataOutput):
             disease_lookup = pickle.load(handler)
 
         rki_abbreviations = get_rki_abbreviations()
-        disease_lookup_with_abbreviations = merge_disease_lookup(disease_lookup, rki_abbreviations)
+        disease_lookup_with_abbreviations = merge_disease_lookup_as_dict(disease_lookup, rki_abbreviations)
 
         with self.output().open('w') as handler:
             pickle.dump(disease_lookup_with_abbreviations, handler)
@@ -106,10 +109,10 @@ class ApplyControlledVocabularyToEventDB(LuigiTaskWithDataOutput):
             country_lookup = pickle.load(handler)
         with self.input()['cleaned_event_db'].open('r') as handler:
             cleaned_event_db = pickle.load(handler)
-        # TODO: do stuff lol
+        translated_diseases = diseases.translate(cleaned_event_db, disease_lookup)
+        translated_countries = country.translate(translated_diseases, country_lookup)
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(translated_countries, handler)
 
 
 class ScrapePromed(LuigiTaskWithDataOutput):
@@ -299,5 +302,5 @@ def format_path(path_string):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), path_string))
 
 if __name__ == '__main__':
-    # luigi.build([TrainNaiveBayes('date')], local_scheduler=True)
-    luigi.build([CleanEventDB()], local_scheduler=True)
+    luigi.build([TrainNaiveBayes('date')], local_scheduler=True)
+    #luigi.build([CleanEventDB()], local_scheduler=True)
