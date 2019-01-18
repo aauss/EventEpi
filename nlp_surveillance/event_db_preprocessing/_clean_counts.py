@@ -2,7 +2,7 @@ import re
 
 
 def clean_counts(event_db):
-    event_db.count_edb = event_db.count_edb.replace(['.', '.'], ['', ''])
+    event_db.count_edb = event_db.count_edb.replace([',', '.'], ['', ''])
     event_db.count_edb = event_db.count_edb.apply(_keep_only_integers)
     return event_db
 
