@@ -12,12 +12,12 @@ def clean_countries(event_db):
 
 def _clean_country_str(country):
     if isinstance(country, str):
-        country = re.sub(r'\n', ', ', country)
+        country = re.sub(r'\n', ', ', country)  # Comma instead of new line
         country = re.sub(r',,', ',', country)  # Because the line above adds one comma to much
-        country = re.sub(r'\(.*\)', "", country)
+        country = re.sub(r'\(.*\)', "", country)  # Remove parentheses and their content
         country = country.replace("&", "und")
         country = country.replace("_", " ")
-        country = country.strip(" ")
+        country = country.strip()
         country = _correct_wrong_use_of_cardinal_directions(country)
     return country
 
