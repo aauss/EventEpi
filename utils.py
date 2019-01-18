@@ -6,13 +6,13 @@ def flatten_list(to_flatten):
     return [item for sublist in to_flatten for item in sublist]
 
 
-def split_up_rows_at_comma_of_entires_of_column(df, column):
+def split_strings_at_comma_and_distribute_to_new_rows(df, column):
     split, length = _split_by_comma_and_then_calc_len_of_split(df, column)
     repeated_entries_dict = _repeat_entries_as_dict(df, length, column)
     repeated_entries_dict[column] = np.concatenate(split.values)
-    split_event_db = pd.DataFrame(repeated_entries_dict, columns=repeated_entries_dict.keys())
-    split_event_db.loc[:, column] = split_event_db.loc[:, column].str.strip()
-    return split_event_db
+    split_df = pd.DataFrame(repeated_entries_dict, columns=repeated_entries_dict.keys())
+    split_df.loc[:, column] = split_df.loc[:, column].str.strip()
+    return split_df
 
 
 def _split_by_comma_and_then_calc_len_of_split(df, column):
