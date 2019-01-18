@@ -2,8 +2,7 @@ from didyoumean import didyoumean
 
 
 def translate(event_db, disease_lookup):
-    event_db.disease_edb = (event_db.disease_edb
-                            [event_db.disease_edb.notna()]
+    event_db.disease_edb = (event_db.disease_edb[event_db.disease_edb.notna()]
                             .apply(lambda x: _translate_disease(x, disease_lookup)))
     return event_db
 
@@ -23,20 +22,11 @@ def _try_to_correct_name(disease, disease_lookup):
     except KeyError:
         pass
     try:
-        or_did_u_mean = _try_complete_partial_words(disease, disease_lookup)
+        or_did_u_mean = _complete_partial_words(disease, disease_lookup)
         disease = disease_lookup[or_did_u_mean]
     except KeyError:
         pass
     return disease
-
-
-def _try_complete_partial_words(disease, disease_lookup):
-    try:
-        complete_name = _complete_partial_words(disease, disease_lookup)
-        translation = disease_lookup[complete_name]
-        return translation
-    except KeyError:
-        return disease
 
 
 def _complete_partial_words(to_complete, disease_lookup):
