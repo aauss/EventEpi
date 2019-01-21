@@ -1,11 +1,12 @@
 import re
 
-import utils
+from utils import my_utils
 
 
 def clean_urls(event_db):
-    event_db = utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL_1')
-    event_db.URL_1 = event_db.URL_1.apply(_remove_guillemets).apply(_check_url_validity)
+    event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL_1')
+    event_db.URL_1 = event_db.URL_1.str.strip()
+    event_db.URL_1 = event_db.URL_1.apply(_remove_guillemets).apply(_only_keep_valid_urls)
     return event_db
 
 
@@ -20,7 +21,7 @@ def _remove_guillemets(url):
     return url
 
 
-def _check_url_validity(url):
+def _only_keep_valid_urls(url):
     # Inspired from django
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
@@ -29,8 +30,7 @@ def _check_url_validity(url):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    try:
-        is_valid_url = re.match(regex, url) is not None
-        return is_valid_url
-    except TypeError:
+    if re.match(regex, str(url)):
+        return url
+    else:
         return None
