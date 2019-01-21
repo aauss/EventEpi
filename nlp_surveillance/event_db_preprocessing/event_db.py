@@ -6,6 +6,7 @@ from ._clean_dates import to_datetime
 from ._clean_counts import clean_counts
 from ._clean_countries import clean_countries
 from ._clean_diseases import clean_diseases
+from ._clean_urls import clean_urls
 
 
 def read_cleaned(path=None):
@@ -16,7 +17,8 @@ def read_cleaned(path=None):
                              .pipe(to_datetime)
                              .pipe(clean_counts)
                              .pipe(clean_countries)
-                             .pipe(clean_diseases))
+                             .pipe(clean_diseases)
+                             .pipe(clean_urls))
     return preprocessed_event_db
 
 
