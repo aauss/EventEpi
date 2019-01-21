@@ -1,18 +1,18 @@
 import re
 import warnings
 
-import utils
+from utils import my_utils
 
 
 def clean_countries(event_db):
-    event_db = utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'country_edb')
     event_db.country_edb = event_db.country_edb.apply(_clean_country_str)
+    event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'country_edb')
     return event_db
 
 
 def _clean_country_str(country):
     if isinstance(country, str):
-        country = re.sub(r'\n', ', ', country)  # Comma instead of new line
+        country = re.sub(r'\s*\n\s*', ', ', country)  # Comma instead of new line
         country = re.sub(r',,', ',', country)  # Because the line above adds one comma to much
         country = re.sub(r'\(.*\)', "", country)  # Remove parentheses and their content
         country = country.replace("&", "und")
