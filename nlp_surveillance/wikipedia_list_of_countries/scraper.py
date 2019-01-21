@@ -1,8 +1,5 @@
 import requests
-import re
 import pandas as pd
-import sys
-
 from bs4 import BeautifulSoup
 
 
@@ -16,17 +13,17 @@ def scrape_wikipedia_countries():
                  "iso_two_abbreviation": []}
     for i in range(len(soup)):
         try:
-            state_name_de = _extract_column_from_soup(soup[i][0], True)
+            state_name_de = soup[i][0].text.replace("\n", "")
             wiki_dict["state_name_de"].append(state_name_de)
 
-            full_state_name_de = _extract_column_from_soup(soup[i][1])
+            full_state_name_de = soup[i][1].text.replace("\n", "")
             wiki_dict["full_state_name_de"].append(full_state_name_de)
 
-            translation_state_name = _extract_column_from_soup(soup[i][10])
+            translation_state_name = soup[i][10].text.replace("\n", "")
             wiki_dict["translation_state_name"].append(translation_state_name)
 
-            wiki_dict['iso_three_abbreviation'].append(_extract_abbreviation_from_soup(soup[i][7]))
-            wiki_dict['iso_two_abbreviation'].append(_extract_abbreviation_from_soup(soup[i][8]))
+            wiki_dict['iso_three_abbreviation'].append(soup[i][7].text.replace("\n", ""))
+            wiki_dict['iso_two_abbreviation'].append(soup[i][8].text.replace("\n", ""))
         except IndexError as e:  # Because header and footer are part of the table, soup operations don't work
             # Except that the first and last entry fail
             if i not in [0, 213]:
@@ -46,37 +43,3 @@ def _get_soup():
     # Extract table entries from country entry
     country_entry_soup = [country_soup[i].find_all('td') for i in range(len(country_soup))]
     return country_entry_soup
-
-
-def _extract_column_from_soup(soup, is_state_name_de=False):
-    extracted_column = soup.text.replace("\n", "")
-    if is_state_name_de:
-        extracted_column = re.sub(r"((mit)|(ohne)).*", "", extracted_column)
-        extracted_column = extracted_column.replace("\xad", "")  # Remove soft hyphen used in "Zentralafr. Rep".
-    extracted_column = _reorder_words_in_names_with_comma(extracted_column)
-    return extracted_column
-
-
-def _extract_abbreviation_from_soup(soup):
-    abbreviation = soup.text.replace("\n", "")
-    return abbreviation
-
-
-def _reorder_words_in_names_with_comma(country_name):
-    """Formats such that Congo, Republik of (Brazzaville) --> Republik of Congo
-    """
-    if "," in country_name:
-        # If there is a comma, switch order to yield a more common abbreviation: Korea, Nord --> Nord Korea
-        matched = re.match(r"([A-Za-z]*), (.*)", country_name)  # Extract capital letters
-        try:
-            country_name = matched[2] + " " + matched[1]  # Patch capital letters together
-            if country_name[0].islower():
-                country_name = [word.capitalize() if word.islower() else word
-                                for word in country_name.split(" ")]  # the Gambia -> The Gambia
-                country_name = " ".join(country_name)
-        except TypeError:
-            print(country_name, " could not be formatted by {}()".format(sys._getframe().f_code.co_name))
-    country_name = re.sub(r'(\s{2,})', ' ', country_name)  # The lines above sometimes includes unnecessary spaces
-    return country_name
-
-
