@@ -30,9 +30,12 @@ def _try_to_correct_name(country, country_lookup):
 
 
 def _complete_partial_words(to_complete, country_lookup):
-    match = [country for country in country_lookup.keys()
-             if country.lower().startswith(to_complete.lower())
-             or to_complete in country]
-    if match:
-        to_complete = match[0]
-    return to_complete
+    if to_complete == 'Korea':
+        return 'Republic of Korea'
+    else:
+        match = [country for country in country_lookup.keys()
+                 if country.lower().startswith(to_complete.lower())
+                 or to_complete in country]
+        if match:
+            to_complete = match[0]
+        return to_complete
