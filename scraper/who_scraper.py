@@ -1,5 +1,6 @@
 import requests
 import urllib.request
+import pandas as pd
 from bs4 import BeautifulSoup
 
 from utils import my_utils
@@ -14,7 +15,8 @@ def scrape(list_of_years=None, months=None, headers=None, proxy=None):
 
     list_of_years = _get_links_by_year(list_of_years=list_of_years, proxy=proxy, headers=headers)
     all_links = _get_links_per_year(list_of_years, list_of_months=months, proxy=proxy, headers=headers)
-    return all_links
+    urls = pd.DataFrame({'URL': all_links})
+    return urls
 
 
 def _get_links_by_year(list_of_years=None, proxy=None, headers=None):

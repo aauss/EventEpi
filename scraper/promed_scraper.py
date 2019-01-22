@@ -1,5 +1,6 @@
 import requests
 import re
+import pandas as pd
 
 from utils import my_utils
 
@@ -26,5 +27,6 @@ def _get_article_ids_per_year(from_year='2018', to_year='2018', proxy=None):
     max_page_num = re.search(r'Page \d+ of (\d+)', content)[1]
     ids_of_pages = [re.findall(r'id\d+', _get_content_of_search_page(i))
                     for i in range(int(max_page_num))]
-    ids = my_utils.flatten_list(ids_of_pages)
-    return ids
+    urls_with_ids = my_utils.flatten_list(ids_of_pages)
+    urls = pd.DataFrame({'URL': urls_with_ids})
+    return urls
