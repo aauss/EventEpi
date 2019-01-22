@@ -1,6 +1,7 @@
 import luigi
 import pickle
 import os
+from epitator.annotator import AnnoDoc
 
 from nlp_surveillance.event_db_preprocessing import event_db
 from nlp_surveillance.wikipedia_list_of_countries.scraper import scrape_wikipedia_countries
@@ -11,6 +12,7 @@ from nlp_surveillance.wikidata_disease_names.wikidata import disease_name_query
 from nlp_surveillance.wikidata_disease_names.rki_abbreviations import get_rki_abbreviations
 from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_as_dict
 from nlp_surveillance.translate import diseases, countries
+from scraper import who_scraper, promed_scraper, text_extractor
 
 
 class LuigiTaskWithDataOutput(luigi.Task):
@@ -122,12 +124,9 @@ class ScrapePromed(LuigiTaskWithDataOutput):
         return luigi.LocalTarget(format_path('../data/scraped/scraped_promed.pkl'), format=luigi.format.Nop)
 
     def run(self):
-        with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
+        promed_urls = promed_scraper.scrape(self.year_to_scrape)
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(promed_urls, handler)
 
 
 class ScrapeWHO(LuigiTaskWithDataOutput):
@@ -137,12 +136,9 @@ class ScrapeWHO(LuigiTaskWithDataOutput):
         return luigi.LocalTarget(format_path('../data/scraped/scraped_who.pkl'), format=luigi.format.Nop)
 
     def run(self):
-        with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
+        who_urls = who_scraper.scrape(self.year_to_scrape)
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(who_urls, handler)
 
 
 class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
@@ -162,11 +158,11 @@ class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
 
     def run(self):
         with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
+            df_to_extract_from = pickle.load(handler)
+        df_to_extract_from.URLS = df_to_extract_from.URL.apply(text_extractor.extract_cleaned_text_from_url)
+        df_to_extract_from = df_to_extract_from.rename(columns=dict({'URL': 'extracted'}))
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(df_to_extract_from, handler)
 
 
 class AnnotateDoc(LuigiTaskWithDataOutput):
@@ -180,11 +176,11 @@ class AnnotateDoc(LuigiTaskWithDataOutput):
 
     def run(self):
         with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
+            df_with_text = pickle.load(handler)
+        columns_with_text = list(filter(lambda x: 'extracted' in x.lower(), df_with_text.columns))
+        df_with_text.loc[:, columns_with_text] = df_with_text.loc[:, columns_with_text].applymap(lambda x: AnnoDoc(x))
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(df_with_text, handler)
 
 
 class AnnotateTier(LuigiTaskWithDataOutput):
@@ -192,14 +188,6 @@ class AnnotateTier(LuigiTaskWithDataOutput):
 
     def requires(self):
         return AnnotateDoc(self.source)
-
-    def run(self):
-        with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
-        with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
 
 
 class AnnotateDisease(AnnotateTier):
@@ -209,8 +197,8 @@ class AnnotateDisease(AnnotateTier):
 
     def run(self):
         with self.input().open('r') as handler:
-            TOREAD = pickle.load(handler)
-        # TODO: do stuff lol
+            df_with_anno_doc = pickle.load(handler)
+        df_with_anno_doc = df_with_anno_doc.applymap()
         with self.output().open('w') as handler:
             TOWRITE = None
             pickle.dump(TOWRITE, handler)
@@ -304,5 +292,4 @@ def format_path(path_string):
 
 if __name__ == '__main__':
     #luigi.build([TrainNaiveBayes('date')], local_scheduler=True)
-    #luigi.build([CleanEventDB()], local_scheduler=True)
-    luigi.build([CleanCountryLookUpAndAddAbbreviations()], local_scheduler=True)
+    luigi.build([CleanEventDB()], local_scheduler=True)
