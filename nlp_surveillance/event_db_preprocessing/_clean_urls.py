@@ -4,10 +4,24 @@ from utils import my_utils
 
 
 def clean_urls(event_db):
-    event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL_1')
-    event_db.URL_1 = event_db.URL_1.str.strip()
-    event_db.URL_1 = event_db.URL_1.apply(_remove_guillemets).apply(_only_keep_valid_urls)
+    event_db = _combine_urls(event_db)
+    event_db.URL = event_db.URL.apply(lambda x: ','.join(x))
+    event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL')
+    event_db.URL = event_db.URL.str.strip()
+    event_db.URL = event_db.URL.apply(_remove_guillemets).apply(_only_keep_valid_urls)
     return event_db
+
+
+def _combine_urls(event_db):
+    url_columns = list(filter(lambda x: 'url' in x.lower(), event_db.columns))
+    event_db['URL'] = event_db[url_columns].apply(lambda x: list(x), axis=1)  # Actually combine
+    event_db['URL'] = event_db[url_columns].apply(_remove_nans_from_list, axis=1)
+    event_db = event_db.drop(columns=url_columns)
+    return event_db
+
+
+def _remove_nans_from_list(url_list):
+    return list(filter(lambda x: x is not None, url_list))
 
 
 def _remove_guillemets(url):
