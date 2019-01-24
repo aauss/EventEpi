@@ -3,6 +3,19 @@ import pandas as pd
 import numpy as np
 
 
+def delete_non_epitator_name_entity_tiers(anno_doc):
+    del anno_doc.tiers["spacy.nes"]
+    del anno_doc.tiers["spacy.noun_chunks"]
+    del anno_doc.tiers["spacy.sentences"]
+    del anno_doc.tiers["spacy.tokens"]
+    try:
+        del anno_doc.tiers["nes"]
+        del anno_doc.tiers["ngrams"]
+        del anno_doc.tiers["tokens"]
+    except KeyError:
+        pass
+
+
 def flatten_list(to_flatten):
     return [item for sublist in to_flatten for item in sublist]
 
