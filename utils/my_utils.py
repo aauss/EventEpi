@@ -14,6 +14,7 @@ def delete_non_epitator_name_entity_tiers(anno_doc):
         del anno_doc.tiers["tokens"]
     except KeyError:
         pass
+    return anno_doc
 
 
 def flatten_list(to_flatten):
