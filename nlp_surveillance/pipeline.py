@@ -18,6 +18,7 @@ from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_
 from nlp_surveillance.translate import diseases, countries
 from nlp_surveillance.scraper import promed_scraper
 from nlp_surveillance.scraper import text_extractor, who_scraper
+from nlp_surveillance.classifier import extract_sentence
 from utils.my_utils import delete_non_epitator_name_entity_tiers
 
 
@@ -200,16 +201,15 @@ class AnnotateTier(LuigiTaskWithDataOutput):
 class AnnotateDisease(AnnotateTier):
 
     def output(self):
-        return luigi.LocalTarget(f'../data/{self.source}/disease_tier.pkl', format=luigi.format.Nop)
+        return luigi.LocalTarget(format_path(f'../data/{self.source}/disease_tier.pkl'), format=luigi.format.Nop)
 
     def run(self):
         with self.input().open('r') as handler:
             df_with_anno_doc = pickle.load(handler)
-        df_with_anno_doc.annotated_text = df_with_anno_doc.annotated_text(lambda x:
-                                                                          (delete_non_epitator_name_entity_tiers(
-                                                                              x.add_tiers(ResolvedKeywordAnnotator()))
-                                                                           if isinstance(x, AnnoDoc) else x)
-                                                                          )
+        df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
+                                                                      (delete_non_epitator_name_entity_tiers(
+                                                                          x.add_tiers(ResolvedKeywordAnnotator()))
+                                                                       if isinstance(x, AnnoDoc) else x))
         with self.output().open('w') as handler:
             pickle.dump(df_with_anno_doc, handler)
 
@@ -217,16 +217,15 @@ class AnnotateDisease(AnnotateTier):
 class AnnotateCount(AnnotateTier):
 
     def output(self):
-        return luigi.LocalTarget(f'../data/{self.source}/count_tier.pkl', format=luigi.format.Nop)
+        return luigi.LocalTarget(format_path(f'../data/{self.source}/count_tier.pkl'), format=luigi.format.Nop)
 
     def run(self):
         with self.input().open('r') as handler:
             df_with_anno_doc = pickle.load(handler)
-        df_with_anno_doc.annotated_text = df_with_anno_doc.annotated_text(lambda x:
-                                                                          (delete_non_epitator_name_entity_tiers(
-                                                                              x.add_tiers(CountAnnotator()))
-                                                                           if isinstance(x, AnnoDoc) else x)
-                                                                          )
+        df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
+                                                                      (delete_non_epitator_name_entity_tiers(
+                                                                          x.add_tiers(CountAnnotator()))
+                                                                       if isinstance(x, AnnoDoc) else x))
         with self.output().open('w') as handler:
             pickle.dump(df_with_anno_doc, handler)
 
@@ -234,16 +233,15 @@ class AnnotateCount(AnnotateTier):
 class AnnotateGeonames(AnnotateTier):
 
     def output(self):
-        return luigi.LocalTarget(f'../data/{self.source}/country_tier.pkl', format=luigi.format.Nop)
+        return luigi.LocalTarget(format_path(f'../data/{self.source}/country_tier.pkl'), format=luigi.format.Nop)
 
     def run(self):
         with self.input().open('r') as handler:
             df_with_anno_doc = pickle.load(handler)
-        df_with_anno_doc.annotated_text = df_with_anno_doc.annotated_text(lambda x:
-                                                                          (delete_non_epitator_name_entity_tiers(
-                                                                              x.add_tiers(GeonameAnnotator()))
-                                                                           if isinstance(x, AnnoDoc) else x)
-                                                                          )
+        df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
+                                                                      (delete_non_epitator_name_entity_tiers(
+                                                                          x.add_tiers(GeonameAnnotator()))
+                                                                       if isinstance(x, AnnoDoc) else x))
         with self.output().open('w') as handler:
             pickle.dump(df_with_anno_doc, handler)
 
@@ -251,16 +249,17 @@ class AnnotateGeonames(AnnotateTier):
 class AnnotateDate(AnnotateTier):
 
     def output(self):
-        return luigi.LocalTarget(f'../data/{self.source}/date_tier.pkl', format=luigi.format.Nop)
+        return luigi.LocalTarget(format_path(f'../data/{self.source}/date_tier.pkl'), format=luigi.format.Nop)
 
     def run(self):
         with self.input().open('r') as handler:
             df_with_anno_doc = pickle.load(handler)
-        df_with_anno_doc.annotated_text = df_with_anno_doc.annotated_text(lambda x:
-                                                                          (delete_non_epitator_name_entity_tiers(
-                                                                              x.add_tiers(DateAnnotator()))
-                                                                           if isinstance(x, AnnoDoc) else x)
-                                                                          )
+        df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
+                                                                      (delete_non_epitator_name_entity_tiers(
+                                                                          x.add_tiers(DateAnnotator()))
+                                                                       if isinstance(x, AnnoDoc) else x))
+
+
         with self.output().open('w') as handler:
             pickle.dump(df_with_anno_doc, handler)
 
@@ -269,9 +268,9 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
     to_learn = luigi.Parameter()
 
     def requires(self):
-        if self.to_learn == 'count':
+        if self.to_learn == 'counts':
             return AnnotateCount('event_db')
-        elif self.to_learn == 'date':
+        elif self.to_learn == 'dates':
             return AnnotateDate('event_db')
 
     def output(self):
@@ -280,11 +279,10 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
 
     def run(self):
         with self.input().open('r') as handler:
-            df_with_to_learn_tier = pickle.load(handler)
-
+            df_with_tiers_to_learn = pickle.load(handler)
+        event_db_with_extracted_sentences = extract_sentence.from_entity(df_with_tiers_to_learn, self.to_learn)
         with self.output().open('w') as handler:
-            TOWRITE = None
-            pickle.dump(TOWRITE, handler)
+            pickle.dump(event_db_with_extracted_sentences, handler)
 
 
 class TrainNaiveBayes(LuigiTaskWithDataOutput):
@@ -310,5 +308,6 @@ def format_path(path_string):
 
 
 if __name__ == '__main__':
-    #luigi.build([TrainNaiveBayes('date')], local_scheduler=True)
-    luigi.build([AnnotateDoc('event_db')], local_scheduler=True)
+    # luigi.build([TrainNaiveBayes('date')], local_scheduler=True)
+    # luigi.build([AnnotateDoc('event_db')], local_scheduler=True)
+    luigi.build([ExtractSentencesAndLabel('dates')], local_scheduler=True)
