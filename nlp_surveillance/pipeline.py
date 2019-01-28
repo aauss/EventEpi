@@ -18,7 +18,7 @@ from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_
 from nlp_surveillance.translate import diseases, countries
 from nlp_surveillance.scraper import promed_scraper
 from nlp_surveillance.scraper import text_extractor, who_scraper
-from nlp_surveillance.classifier import extract_sentence
+from nlp_surveillance.classifier import extract_sentence, create_labels
 from utils.my_utils import delete_non_epitator_name_entity_tiers
 
 
@@ -283,10 +283,10 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
         with self.input().open('r') as handler:
             df_with_tiers_to_learn = pickle.load(handler)
         event_db_with_extracted_sentences = extract_sentence.from_entity(df_with_tiers_to_learn, self.to_learn)
-
+        event_with_labels = create_labels.create_labels(event_db_with_extracted_sentences, self.to_learn)
 
         with self.output().open('w') as handler:
-            pickle.dump(event_db_with_extracted_sentences, handler)
+            pickle.dump(event_with_labels, handler)
 
 
 class TrainNaiveBayes(LuigiTaskWithDataOutput):
