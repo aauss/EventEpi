@@ -1,11 +1,16 @@
 from nltk import sent_tokenize
-from itertools import product, starmap, compress, tee
+from itertools import product
+from functools import partial
 
 
 def from_entity(event_db, to_optimize):
     event_db = _drop_unnecessary_columns_and_nans(event_db, to_optimize)
 
-    event_db.annotated = event_db.annotated.apply(lambda x: _extract_sentence_from_found_entities(x, to_optimize))
+    extract_sentences = partial(_extract_sentence_from_found_entities, to_optimize=to_optimize)
+    event_db['sentences'] = event_db.annotated.apply(extract_sentences)
+
+    extract_entity = partial(_extract_entities_from_sentence, to_optimize=to_optimize)
+    event_db[to_optimize] = event_db.annotated.apply(extract_entity)
     return event_db
 
 
@@ -15,24 +20,38 @@ def _drop_unnecessary_columns_and_nans(event_db, to_optimize):
 
     event_db = event_db[[column_to_optimize, 'annotated']]
     event_db = event_db.dropna()
-    return event_db
+
+    text_long_enough = event_db.annotated.apply(lambda x: len(x.text) > 200)
+    return event_db[text_long_enough]
 
 
 def _extract_sentence_from_found_entities(annotated, to_optimize):
+    sentence_span_to_sentence_dict = _sentence_span_to_sentence_dict(annotated)
+
+    entity_spans_as_objects = annotated.tiers[to_optimize].spans
+    entity_spans = (range(span.start, span.end) for span in entity_spans_as_objects)
+
+    matched_sentences = _return_matching_sentences(entity_spans, sentence_span_to_sentence_dict)
+    return list(matched_sentences)
+
+
+def _sentence_span_to_sentence_dict(annotated):
     sentences = sent_tokenize(annotated.text)
 
     calculate_sentence_span = _generate_span_calculator()
     sentence_spans = (calculate_sentence_span(sent) for sent in sentences)
-    entity_spans_as_objects = annotated.tiers[to_optimize].spans
-    entity_spans = (range(span.start, span.end) for span in entity_spans_as_objects)
+    return dict(zip(sentence_spans, sentences))
 
-    two_identical_cartesian_product_of_spans = tee(product(entity_spans, sentence_spans))
-    cartesian_1, cartesian_2 = two_identical_cartesian_product_of_spans
-    matched_entity_with_sentences = starmap(_span_subset_of, cartesian_1)
-    matches = compress(cartesian_2, matched_entity_with_sentences)
-    matched_sent_spans = [s for _, s in matches]
-    matched_sentences = [annotated.text[min(r):max(r)] for r in matched_sent_spans]
-    return matched_sentences
+
+def _extract_entities_from_sentence(annotated, to_optimize):
+    spans = annotated.tiers[to_optimize].spans
+    if to_optimize == 'dates':
+        entities = [span.metadata['datetime_range'] for span in spans]
+    elif to_optimize == 'counts':
+        entities = [span.metadata['count'] for span in spans]
+    else:
+        raise NotImplementedError
+    return entities
 
 
 def _generate_span_calculator():
@@ -46,6 +65,12 @@ def _generate_span_calculator():
         return range(start_sent, end_of_sent)
 
     return add_length_of_string
+
+
+def _return_matching_sentences(entity_spans, sentence_span_to_sentence_dict):
+    for entity_span, sentence_span in product(entity_spans, sentence_span_to_sentence_dict.keys()):
+        if _span_subset_of(entity_span, sentence_span):
+            yield sentence_span_to_sentence_dict[sentence_span]
 
 
 def _span_subset_of(a_span, another_span):
