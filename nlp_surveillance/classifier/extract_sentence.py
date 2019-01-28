@@ -1,6 +1,10 @@
+import warnings
+import pandas as pd
 from nltk import sent_tokenize
 from itertools import product
 from functools import partial
+
+from utils.my_utils import split_list_and_distribute_to_new_rows
 
 
 def from_entity(event_db, to_optimize):
@@ -11,7 +15,18 @@ def from_entity(event_db, to_optimize):
 
     extract_entity = partial(_extract_entities_from_sentence, to_optimize=to_optimize)
     event_db[to_optimize] = event_db.annotated.apply(extract_entity)
-    return event_db
+
+    num_of_sent_and_entities_match = (event_db[['sentences', to_optimize]]
+                                      .apply(lambda x: len(x[0]) == len(x[1]), axis=1))
+    if not all(num_of_sent_and_entities_match):
+        warnings.warn('There are unequal amounts of text and entities extracted')
+        event_db = event_db[num_of_sent_and_entities_match]
+
+    event_db['list_of_sentence_entity_tuples'] = event_db[['sentences', to_optimize]].apply(lambda x: list(zip(*x)),
+                                                                                            axis=1)
+    event_db = split_list_and_distribute_to_new_rows(event_db, 'list_of_sentence_entity_tuples')
+    event_db[['sentence', to_optimize]] = event_db.list_of_sentence_entity_tuples.apply(pd.Series)
+    return event_db.drop(columns=['annotated', 'sentences', 'list_of_sentence_entity_tuples'])
 
 
 def _drop_unnecessary_columns_and_nans(event_db, to_optimize):
@@ -52,6 +67,10 @@ def _extract_entities_from_sentence(annotated, to_optimize):
     else:
         raise NotImplementedError
     return entities
+
+
+def _zip_sentence_and_entities(to_optimze):
+    pass
 
 
 def _generate_span_calculator():
