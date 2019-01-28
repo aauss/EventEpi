@@ -1,6 +1,7 @@
 import luigi
 import pickle
 import os
+import warnings
 from epitator.annotator import AnnoDoc
 from epitator.geoname_annotator import GeonameAnnotator
 from epitator.resolved_keyword_annotator import ResolvedKeywordAnnotator
@@ -272,6 +273,8 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
             return AnnotateCount('event_db')
         elif self.to_learn == 'dates':
             return AnnotateDate('event_db')
+        else:
+            raise NotImplementedError
 
     def output(self):
         return luigi.LocalTarget(format_path(f'../data/event_db/{self.to_learn}_with_sentences_and_label.pkl'),
@@ -281,6 +284,11 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
         with self.input().open('r') as handler:
             df_with_tiers_to_learn = pickle.load(handler)
         event_db_with_extracted_sentences = extract_sentence.from_entity(df_with_tiers_to_learn, self.to_learn)
+        num_of_sent_and_entities_match = (event_db_with_extracted_sentences[['sentences', self.to_learn]]
+                                          .apply(lambda x: len(x[0]) == len(x[1]), axis=1))
+        if not all(num_of_sent_and_entities_match):
+            warnings.warn('There are unequal amounts of text and entities extracted')
+            event_db_with_extracted_sentences = event_db_with_extracted_sentences[num_of_sent_and_entities_match]
         with self.output().open('w') as handler:
             pickle.dump(event_db_with_extracted_sentences, handler)
 
