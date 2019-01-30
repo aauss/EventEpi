@@ -7,7 +7,7 @@ def clean_urls(event_db):
     event_db = _combine_url_columns_row_wise_with_comma(event_db)
     event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL')
     event_db.URL = event_db.URL.str.strip()
-    event_db.URL = event_db.URL.apply(_remove_guillemets).apply(_only_keep_valid_urls)
+    event_db.URL = event_db.URL.apply(_remove_guillemets).apply(_only_keep_valid_urls).apply(_clean_promed_urls)
     return event_db
 
 
@@ -35,15 +35,23 @@ def _remove_guillemets(url):
 
 
 def _only_keep_valid_urls(url):
-    # Inspired from django
-    regex = re.compile(
-        r'^(?:http|ftp)s?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    if re.match(regex, str(url)):
+    url = str(url)
+    necessary = ['http', 'www.', '.org', '.com', '.int']
+    if any(nec in url for nec in necessary):
         return url
     else:
         return None
+
+
+def _clean_promed_urls(url):
+    # Necessary since there are many URL writings for the same article
+    url = str(url)
+    if 'promedmail' in url:
+        url = url.replace('http:', 'https:')
+        no_www_match = re.match(r'(https://)(promedmail.org/post/.*)', url)
+        if no_www_match:
+            url = no_www_match[1] + 'www.' + no_www_match[2]
+        url = re.sub(r'(https://www.promedmail.org/post/)\d+\.(\d+)', r'\1\2', url)
+        if 'direct.php?' in url:
+            url = re.sub(r'(https://www.promedmail.org/)direct\.php\?id=\d+\.(\d+)', r'\1\2', url)
+    return url
