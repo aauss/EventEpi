@@ -8,6 +8,8 @@ from utils import my_utils
 
 def scrape(list_of_years=None, months=None, headers=None, proxy=None):
     # Scrapes the WHO DONs using the WHO DON scraping functions and returns the links to these DONs
+    if not isinstance(list_of_years, list):
+        list_of_years = [list_of_years]
 
     if not _connection_is_possible() and proxy is not None:
         headers = my_utils.load_rki_header_and_proxy_dict()['headers']
