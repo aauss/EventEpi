@@ -1,6 +1,8 @@
 import pickle
 import pandas as pd
 import numpy as np
+from operator import itemgetter
+from itertools import groupby
 
 
 def delete_non_epitator_name_entity_tiers(anno_doc):
@@ -15,6 +17,12 @@ def delete_non_epitator_name_entity_tiers(anno_doc):
     except KeyError:
         pass
     return anno_doc
+
+
+def return_most_occuring_string_in_list(list_of_strings):
+    list_of_country_occurence_tuple = [(key, len(list(group))) for key, group in groupby(sorted(list_of_strings))]
+    sorted_by_occurence = sorted(list_of_country_occurence_tuple, key=lambda x: x[1], reverse=True)
+    return max(sorted_by_occurence, key=itemgetter(1))[0]
 
 
 def flatten_list(to_flatten):
