@@ -10,7 +10,7 @@ from utils.my_utils import split_list_and_distribute_to_new_rows
 def from_entity(event_db, to_optimize):
     event_db = _drop_unnecessary_columns_and_nans(event_db, to_optimize)
 
-    extract_sentences = partial(_extract_sentence_from_found_entities, to_optimize=to_optimize)
+    extract_sentences = partial(extract_sentence_from_found_entities, to_optimize=to_optimize)
     event_db['sentences'] = event_db.annotated.apply(extract_sentences)
 
     extract_entity = partial(_extract_entities_from_sentence, to_optimize=to_optimize)
@@ -40,7 +40,7 @@ def _drop_unnecessary_columns_and_nans(event_db, to_optimize):
     return event_db[text_long_enough]
 
 
-def _extract_sentence_from_found_entities(annotated, to_optimize):
+def extract_sentence_from_found_entities(annotated, to_optimize):
     sentence_span_to_sentence_dict = _sentence_span_to_sentence_dict(annotated)
 
     entity_spans_as_objects = annotated.tiers[to_optimize].spans

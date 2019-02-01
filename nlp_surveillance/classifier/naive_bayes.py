@@ -33,7 +33,7 @@ def _get_classifier():
 
 
 def _prepare_data(df):
-    sentences = df.sentence.apply(_remove_stop_words)
+    sentences = df.sentence.apply(remove_stop_words)
     X_train, X_test, y_train, y_test = train_test_split(sentences, df.label,
                                                         random_state=42)
     return X_train, X_test, y_train, y_test
@@ -50,7 +50,7 @@ def _evaluate(predicted, label_test):
     return classification_report, confusion_matrix
 
 
-def _remove_stop_words(text):
+def remove_stop_words(text):
     stopwords_to_remove = set(stopwords.words('english'))
     words_to_process = set(word_tokenize(text))
     text_without_stopwords = words_to_process - stopwords_to_remove
