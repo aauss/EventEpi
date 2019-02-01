@@ -3,7 +3,7 @@ import os
 import pickle
 import sys
 
-from nlp_surveillance.classifier.extract_sentence import _extract_sentence_from_found_entities
+from nlp_surveillance.classifier.extract_sentence import extract_sentence_from_found_entities
 from utils.my_utils import delete_non_epitator_name_entity_tiers
 
 sys.setrecursionlimit(5000)  # Otherwise serialization does not work
@@ -38,5 +38,5 @@ def test_sentence_extraction(annotated_example):
                           'Still, I seem to like Berlin more than Frankfurt now.',
                           'Still, I seem to like Berlin more than Frankfurt now.',
                           'I am sad that I am not in Switzerland.']
-    sentences_example = _extract_sentence_from_found_entities(annotated_example, 'geonames')
+    sentences_example = extract_sentence_from_found_entities(annotated_example, 'geonames')
     assert sentences_example == sentences_expected
