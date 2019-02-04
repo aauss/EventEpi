@@ -22,7 +22,11 @@ def delete_non_epitator_name_entity_tiers(anno_doc):
 def return_most_occuring_string_in_list(list_of_strings):
     list_of_country_occurence_tuple = [(key, len(list(group))) for key, group in groupby(sorted(list_of_strings))]
     sorted_by_occurence = sorted(list_of_country_occurence_tuple, key=lambda x: x[1], reverse=True)
-    return max(sorted_by_occurence, key=itemgetter(1))[0]
+    try:
+        most_occuring_string = max(sorted_by_occurence, key=itemgetter(1))[0]
+    except ValueError:
+        most_occuring_string = None
+    return most_occuring_string
 
 
 def flatten_list(to_flatten):
