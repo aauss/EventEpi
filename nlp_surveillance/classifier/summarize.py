@@ -1,6 +1,5 @@
 from operator import itemgetter
 from itertools import compress
-from functools import partial
 from epitator.annotator import AnnoDoc
 from epitator.geoname_annotator import GeonameAnnotator
 from epitator.resolved_keyword_annotator import ResolvedKeywordAnnotator
@@ -37,49 +36,66 @@ def _annotate_all_tiers(df):
 
 
 def _choose_geonames(annotated):
-    geo_spans = annotated.tiers['geonames'].spans
-    country_names = []
-    for span in geo_spans:
-        try:
-            country_names.append(span.geoname.country_name)
-        except AttributeError:
-            continue
+    try:
+        geo_spans = annotated.tiers['geonames'].spans
+        country_names = []
+        for span in geo_spans:
+            try:
+                country_names.append(span.geoname.country_name)
+            except AttributeError:
+                continue
 
-    most_frequent_country_name = return_most_occuring_string_in_list(country_names)
+        most_frequent_country_name = return_most_occuring_string_in_list(country_names)
+    except KeyError:
+        most_frequent_country_name = None
     return most_frequent_country_name
 
 
 def _choose_disease(annotated):
-    keyword_spans = annotated.tiers["resolved_keywords"].spans
+    try:
+        keyword_spans = annotated.tiers["resolved_keywords"].spans
 
-    entity_of_span = lambda x: keyword_spans[x].resolutions[0]['entity']
-    found_diseases = [entity_of_span(i)['label'] for i in range(len(keyword_spans))
-                      if entity_of_span(i)['type'] == 'disease']
-    most_frequent_disease_name = return_most_occuring_string_in_list(found_diseases)
+        entity_of_span = lambda x: keyword_spans[x].resolutions[0]['entity']
+        found_diseases = [entity_of_span(i)['label'] for i in range(len(keyword_spans))
+                          if entity_of_span(i)['type'] == 'disease']
+        most_frequent_disease_name = return_most_occuring_string_in_list(found_diseases)
+    except KeyError:
+        most_frequent_disease_name = None
     return most_frequent_disease_name
 
 
 def _choose_date(annotated, clf):
-    classifier = clf
-    extracted_sentences = extract_sentence_from_found_entities(annotated, 'dates')
-    cleaned_sentences = [remove_stop_words(sentence) for sentence in extracted_sentences]
-    list_of_proba_false_and_true = classifier.predict_proba(cleaned_sentences)
-    mask_of_maximum = [i == max(list_of_proba_false_and_true, key=itemgetter(1))
-                       for i in list_of_proba_false_and_true]
-    date_spans = annotated.tiers['dates'].spans
-    relevant_spans = list(compress(date_spans, mask_of_maximum))
-    date = [span.date_time_range for span in relevant_spans]
+    try:
+        classifier = clf
+        extracted_sentences = extract_sentence_from_found_entities(annotated, 'dates')
+        cleaned_sentences = [remove_stop_words(sentence) for sentence in extracted_sentences]
+        list_of_proba_false_and_true = classifier.predict_proba(cleaned_sentences)
+        mask_of_maximum = [True if all(i == max(list_of_proba_false_and_true, key=itemgetter(1)))
+                           else False
+                           for i in list_of_proba_false_and_true]
+        date_spans = annotated.tiers['dates'].spans
+        relevant_spans = list(compress(date_spans, mask_of_maximum))
+        date = [span.datetime_range for span in relevant_spans]
+
+    except (KeyError, ValueError) as  e:
+        print(e)
+        date = None
     return date
 
 
 def _choose_count(annotated, clf):
-    classifier = clf
-    extracted_sentences = extract_sentence_from_found_entities(annotated, 'counts')
-    cleaned_sentences = [remove_stop_words(sentence) for sentence in extracted_sentences]
-    list_of_proba_false_and_true = classifier.predict_proba(cleaned_sentences)
-    mask_of_maximum = [i == max(list_of_proba_false_and_true, key=itemgetter(1))
-                       for i in list_of_proba_false_and_true]
-    date_spans = annotated.tiers['counts'].spans
-    relevant_spans = list(compress(date_spans, mask_of_maximum))
-    count = [span.metadata['count'] for span in relevant_spans]
+    try:
+        classifier = clf
+        extracted_sentences = extract_sentence_from_found_entities(annotated, 'counts')
+        cleaned_sentences = [remove_stop_words(sentence) for sentence in extracted_sentences]
+        list_of_proba_false_and_true = classifier.predict_proba(cleaned_sentences)
+        mask_of_maximum = [True if all(i == max(list_of_proba_false_and_true, key=itemgetter(1)))
+                           else False
+                           for i in list_of_proba_false_and_true]
+        date_spans = annotated.tiers['counts'].spans
+        relevant_spans = list(compress(date_spans, mask_of_maximum))
+        count = [span.metadata['count'] for span in relevant_spans]
+    except (KeyError, ValueError) as  e:
+        print(e)
+        count = None
     return count
