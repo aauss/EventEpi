@@ -1,4 +1,8 @@
 from operator import itemgetter
+# from tqdm import tqdm
+# import pandas as pd
+from memory_profiler import profile
+from collections import defaultdict
 from itertools import compress
 from epitator.annotator import AnnoDoc
 from epitator.geoname_annotator import GeonameAnnotator
@@ -12,27 +16,37 @@ from nlp_surveillance.classifier.extract_sentence import extract_sentence_from_f
 from nlp_surveillance.classifier.naive_bayes import remove_stop_words
 
 
-def annotate_and_summarize(df, clf_dates, clf_counts):
-    df_with_entites = _annotate_all_tiers(df)
-    # df_with_entites = (df_annotated
-    #                    .pipe(_choose_geonames)
-    #                    .pipe(_choose_disease)
-    #                    .pipe(_choose_count, clf_counts)
-    #                    .pipe(_choose_date, clf_dates))
-    df_with_entites['geonames'] = df_with_entites['annotated'].apply(_choose_geonames)
-    df_with_entites['disease'] = df_with_entites['annotated'].apply(_choose_disease)
-    df_with_entites['date'] = df_with_entites['annotated'].apply(lambda x: _choose_date(x, clf_dates))
-    df_with_entites['count'] = df_with_entites['annotated'].apply(lambda x: _choose_count(x, clf_counts))
-    df_with_entites = df_with_entites.drop(columns='annotated')
-    return df_with_entites
+# def annotate_and_summarize(df, clf_dates, clf_counts):
+#     df['geonames'] = df['annotated'].apply()
+#     # df_with_entites = _annotate_all_tiers(df)
+#     #
+#     # df_with_entites['geonames'] = df_with_entites['annotated'].apply(_choose_geonames)
+#     # df_with_entites['disease'] = df_with_entites['annotated'].apply(_choose_disease)
+#     # df_with_entites['date'] = df_with_entites['annotated'].apply(lambda x: _choose_date(x, clf_dates))
+#     # df_with_entites['count'] = df_with_entites['annotated'].apply(lambda x: _choose_count(x, clf_counts))
+#     # df_with_entites = df_with_entites.drop(columns='annotated')
+#     return df_with_entites
+@profile
+def annotate_and_summarize(annotated, clf_dates, clf_counts):
+    d = defaultdict(list)
+    # for index, annotated in enumerate(tqdm(df['annotated'])):
+    annotated = _annotate_all_tiers(annotated)
+    d['geoname'].append(_choose_geonames(annotated))
+    d['diseases'].append(_choose_disease(annotated))
+    d['counts'].append(_choose_count(annotated, clf_counts))
+    d['date'].append(_choose_date(annotated, clf_dates))
+    # df.iat[index, 0] = None  # Set the just used annotated to None when done
+    annotated = None
+    return d
 
 
-def _annotate_all_tiers(df):
+def _annotate_all_tiers(annotated):
     anno_tiers = [GeonameAnnotator(), CountAnnotator(), ResolvedKeywordAnnotator(), DateAnnotator()]
-    for tier in anno_tiers:
-        df['annotated'].apply(lambda x: (x.add_tiers(tier) if isinstance(x, AnnoDoc) else x))
-    df['annotated'].apply(lambda x: delete_non_epitator_name_entity_tiers(x) if isinstance(x, AnnoDoc) else x)
-    return df
+    if isinstance(annotated, AnnoDoc):
+        for tier in anno_tiers:
+            annotated.add_tiers(tier)
+            annotated = delete_non_epitator_name_entity_tiers(annotated)
+    return annotated
 
 
 def _choose_geonames(annotated):

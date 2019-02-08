@@ -1,6 +1,10 @@
 import luigi
 import pickle
 import os
+import pandas as pd
+import gc
+from tqdm import tqdm
+from memory_profiler import profile, memory_usage
 from luigi import format
 from epitator.annotator import AnnoDoc
 from epitator.geoname_annotator import GeonameAnnotator
@@ -18,7 +22,6 @@ from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_
 from nlp_surveillance.translate import diseases, countries
 from nlp_surveillance.scraper import text_extractor, who_scraper, promed_scraper
 from nlp_surveillance.classifier import extract_sentence, create_labels, naive_bayes, summarize
-
 
 
 class LuigiTaskWithDataOutput(luigi.Task):
@@ -351,14 +354,38 @@ class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
         return luigi.LocalTarget(format_path('../data/recommender/with_entities.pkl'),
                                  format=luigi.format.Nop)
 
+    @profile
     def run(self):
-        with self.input().open('r') as handler:
-            recommender_annotated_and_labeled = pickle.load(handler)
-        recommender_with_entities = summarize.annotate_and_summarize(recommender_annotated_and_labeled,
-                                                                     TrainNaiveBayes('dates').data_output(),
-                                                                     TrainNaiveBayes('counts').data_output())
+        index = 0
+        try:
+            while True:
+                with self.input().open('r') as handler:
+                    annotated = pickle.load(handler)['annotated'].iloc[index]
+
+                recommender_with_entities = summarize.annotate_and_summarize(annotated,
+                                                                             TrainNaiveBayes('dates').data_output(),
+                                                                             TrainNaiveBayes('counts').data_output())
+                with open(f'batch_{index}.pkl', 'wb') as batch_handle:
+                    pickle.dump(recommender_with_entities, batch_handle)
+                index += 1
+                #gc.enable()
+        except IndexError:
+            pass
+
+        batches = [file for file in os.listdir() if 'batch' in file]
+
+        first = batches[0]
+        with open(first, 'rb') as batch_handle:
+            recommender_with_entities = pickle.load(batch_handle)
+            recommender_with_entities = [recommender_with_entities]
+        for batch in batches[1:]:
+            with open(batch, 'rb') as batch_handle:
+                to_append = pickle.load(batch_handle)
+                recommender_with_entities.append(to_append)
+        sum(concatted['counts'].iloc[6])
+        concatted = pd.concat(recommender_with_entities, ignore_index=True)
         with self.output().open('w') as handler:
-            pickle.dump(recommender_with_entities, handler)
+            pickle.dump(concatted, handler)
 
 
 def format_path(path_string):
@@ -371,4 +398,5 @@ if __name__ == '__main__':
     # luigi.build([ExtractSentencesAndLabel('dates')], local_scheduler=True)
     # luigi.build([ScrapeFromURLsAndExtractText('event_db')], local_scheduler=True)
     # luigi.build([AnnotateDoc('who'), AnnotateDoc('promed')], local_scheduler=True)
-    luigi.build([RecommenderTierAnnotation()])
+    luigi.build([RecommenderTierAnnotation()], local_scheduler=True)
+
