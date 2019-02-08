@@ -382,7 +382,7 @@ class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
             with open(batch, 'rb') as batch_handle:
                 to_append = pickle.load(batch_handle)
                 recommender_with_entities.append(to_append)
-        sum(concatted['counts'].iloc[6])
+        recommender_with_entities = [pd.DataFrame(d) for d in recommender_with_entities]
         concatted = pd.concat(recommender_with_entities, ignore_index=True)
         with self.output().open('w') as handler:
             pickle.dump(concatted, handler)
