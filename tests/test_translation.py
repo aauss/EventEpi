@@ -1,7 +1,7 @@
 import pandas as pd
 
 from nlp_surveillance.translate import countries, diseases
-from nlp_surveillance.event_db_preprocessing._clean_diseases import clean_diseases
+from nlp_surveillance.event_db_preprocessing.clean_diseases import clean_diseases
 from nlp_surveillance.pipeline import (MergeDiseaseNameLookupWithAbbreviationsOfRKI,
                                        CleanCountryLookUpAndAddAbbreviations)
 

@@ -1,10 +1,10 @@
 import pandas as pd
 
-from nlp_surveillance.event_db_preprocessing._clean_countries import clean_countries
-from nlp_surveillance.event_db_preprocessing._clean_counts import clean_counts
-from nlp_surveillance.event_db_preprocessing._clean_dates import to_datetime
-from nlp_surveillance.event_db_preprocessing._clean_diseases import clean_diseases
-from nlp_surveillance.event_db_preprocessing._clean_urls import clean_urls
+from nlp_surveillance.event_db_preprocessing.clean_countries import clean_countries
+from nlp_surveillance.event_db_preprocessing.clean_counts import clean_counts
+from nlp_surveillance.event_db_preprocessing.clean_dates import to_datetime
+from nlp_surveillance.event_db_preprocessing.clean_diseases import clean_diseases
+from nlp_surveillance.event_db_preprocessing.clean_urls import clean_urls
 
 
 def test_clean_countries():
