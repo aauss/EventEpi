@@ -71,8 +71,8 @@ def test_clean_urls():
 
     expected_clean_urls = pd.DataFrame({'URL': ['http://apps.who.int/iris/10665/1/OEW10.pdf',
                                                 'http://www.google.com',
-                                                'http://www.promedmail.org/post/4',
-                                                'http://www.promedmail.org/post/5',
+                                                'https://www.promedmail.org/post/4',
+                                                'https://www.promedmail.org/post/5',
                                                 None]})
     cleaned_urls = clean_urls(example_urls_to_clean)
     pd.testing.assert_frame_equal(cleaned_urls, expected_clean_urls)
