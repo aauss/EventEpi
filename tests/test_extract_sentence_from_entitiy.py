@@ -9,9 +9,10 @@ from utils.my_utils import delete_non_epitator_name_entity_tiers
 sys.setrecursionlimit(5000)  # Otherwise serialization does not work
 
 
-@ pytest.fixture
+@pytest.fixture
 def annotated_example():
     dirname = os.path.dirname(__file__)
+    print(dirname)
     path = os.path.join(dirname, '..', 'data', 'fixtures', 'annotated_example.pkl')
     if not os.path.isfile(path):
         from epitator.annotator import AnnoDoc
@@ -22,7 +23,7 @@ def annotated_example():
                             ' I am sad that I am not in Switzerland.')
         annotated.add_tiers(GeonameAnnotator())
         annotated = delete_non_epitator_name_entity_tiers(annotated)
-        print(annotated.tiers)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as handel:
             pickle.dump(annotated, handel)
     else:
