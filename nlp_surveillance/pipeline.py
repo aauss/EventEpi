@@ -9,6 +9,7 @@ from epitator.annotator import AnnoDoc
 from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 
+from utils.my_utils import flatten_list
 from nlp_surveillance.event_db_preprocessing import event_db
 from nlp_surveillance.wikipedia_list_of_countries.scraper import scrape_wikipedia_countries
 from nlp_surveillance.wikipedia_list_of_countries.lookup import abbreviate_wikipedia_country_df, to_translation_dict
@@ -278,17 +279,11 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
         learn_to_column = {'dates': 'date_of_data', 'counts': 'count_edb'}
         with self.input().open('r') as handler:
             df_with_text = pickle.load(handler)[[learn_to_column[self.to_learn], 'extracted_text']].dropna()
-        # to_tier = {'counts': CountAnnotator(), 'dates': DateAnnotator()}
-        # df_with_anno_doc['annotated'] = df_with_anno_doc['annotated'].apply(lambda x:
-        #                                                                     ((x.add_tiers(to_tier[str(self.to_learn)]))
-        #                                                                      if isinstance(x, AnnoDoc) else x))
-        #
-        # event_db_with_extracted_sentences = extract_sentence.from_entity(df_with_anno_doc, self.to_learn)
-        # event_with_labels = create_labels.create_labels(event_db_with_extracted_sentences, self.to_learn)
 
-        sentence_entity_tuples = (extract_sentence.from_entity(text, self.to_learn)
-                                  for text in df_with_text['extracted_text'])
-        sentence_entity = pd.DataFrame(sentence_entity_tuples, columns=['sentence', str(self.to_learn)])
+        sentence_entity_tuples = flatten_list((extract_sentence.from_entity(text, self.to_learn)
+                                               for text in df_with_text['extracted_text']))
+        sentence_entity_df = pd.DataFrame(sentence_entity_tuples, columns=['sentence', str(self.to_learn)])
+        sentence_entity_df = pd.concat([df_with_text, sentence_entity_df], axis=1)
         with self.output().open('w') as handler:
             pickle.dump(event_with_labels, handler)
 

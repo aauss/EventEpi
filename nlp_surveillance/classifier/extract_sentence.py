@@ -42,10 +42,6 @@ def _extract_entities_from_sentence(annotated, to_optimize):
     return entities
 
 
-def _zip_sentence_and_entities(to_optimze):
-    pass
-
-
 def _generate_span_calculator():
     start = 0
 
