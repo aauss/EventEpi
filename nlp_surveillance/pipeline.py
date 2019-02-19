@@ -2,6 +2,7 @@ import luigi
 import pickle
 import os
 import pandas as pd
+import numpy as np
 import dask.dataframe as dd
 from memory_profiler import profile
 from luigi import format
@@ -277,15 +278,22 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
 
     def run(self):
         learn_to_column = {'dates': 'date_of_data', 'counts': 'count_edb'}
+        db_entity = learn_to_column[self.to_learn]
         with self.input().open('r') as handler:
-            df_with_text = pickle.load(handler)[[learn_to_column[self.to_learn], 'extracted_text']].dropna()
+            df_with_text = pickle.load(handler)[[db_entity, 'extracted_text']].dropna()
 
-        sentence_entity_tuples = flatten_list((extract_sentence.from_entity(text, self.to_learn)
-                                               for text in df_with_text['extracted_text']))
-        sentence_entity_df = pd.DataFrame(sentence_entity_tuples, columns=['sentence', str(self.to_learn)])
-        sentence_entity_df = pd.concat([df_with_text, sentence_entity_df], axis=1)
+        sentence_entity_db_entity_tuples = (extract_sentence.from_entity(row.extracted_text, 'counts', row.count_edb)
+                                            for row in df_with_text.itertuples())
+
+        sentence_entity_df = pd.DataFrame({'sentence': flatten_list((tuple_[0]
+                                                                     for tuple_ in sentence_entity_db_entity_tuples)),
+                                           'entities': flatten_list((tuple_[1]
+                                                                     for tuple_ in sentence_entity_db_entity_tuples)),
+                                           db_entity: flatten_list((tuple_[2]
+                                                                    for tuple_ in sentence_entity_db_entity_tuples))})
+
         with self.output().open('w') as handler:
-            pickle.dump(event_with_labels, handler)
+            pickle.dump(sentence_entity_df, handler)
 
 
 class TrainNaiveBayes(LuigiTaskWithDataOutput):
