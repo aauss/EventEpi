@@ -2,13 +2,14 @@ import pandas as pd
 from collections import namedtuple
 
 
-def create_labels(entities, event_db_entry, to_optimize):
+def create_labels(entities, to_optimize, event_db_entry):
+
     if to_optimize == 'counts':
         labels = [event_db_entry == count for count in entities]
     elif to_optimize == 'dates':
         labels = _label_dates(entities, event_db_entry)
     else:
-        raise NotImplementedError
+        raise ValueError
     return labels
 
 

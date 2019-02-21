@@ -1,6 +1,6 @@
 from operator import itemgetter
-# from tqdm import tqdm
-# import pandas as pd
+
+from nltk import sent_tokenize
 from memory_profiler import profile
 from collections import defaultdict
 from itertools import compress
@@ -10,42 +10,28 @@ from epitator.resolved_keyword_annotator import ResolvedKeywordAnnotator
 from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 
-from utils.my_utils import delete_non_epitator_name_entity_tiers, return_most_occuring_string_in_list
-from nlp_surveillance.classifier.extract_sentence import extract_sentence_from_found_entities
-
+from utils.my_utils import return_most_occuring_string_in_list
 from nlp_surveillance.classifier.naive_bayes import remove_stop_words
+from nlp_surveillance.classifier.extract_sentence import extract_entities_with_sentence
 
 
-# def annotate_and_summarize(df, clf_dates, clf_counts):
-#     df['geonames'] = df['annotated'].apply()
-#     # df_with_entites = _annotate_all_tiers(df)
-#     #
-#     # df_with_entites['geonames'] = df_with_entites['annotated'].apply(_choose_geonames)
-#     # df_with_entites['disease'] = df_with_entites['annotated'].apply(_choose_disease)
-#     # df_with_entites['date'] = df_with_entites['annotated'].apply(lambda x: _choose_date(x, clf_dates))
-#     # df_with_entites['count'] = df_with_entites['annotated'].apply(lambda x: _choose_count(x, clf_counts))
-#     # df_with_entites = df_with_entites.drop(columns='annotated')
-#     return df_with_entites
-@profile
-def annotate_and_summarize(annotated, clf_dates, clf_counts):
+def annotate_and_summarize(text, clf_dates, clf_counts):
     d = defaultdict(list)
-    # for index, annotated in enumerate(tqdm(df['annotated'])):
-    annotated = _annotate_all_tiers(annotated)
+    annotated = _annotate_all_tiers(text)
     d['geoname'].append(_choose_geonames(annotated))
     d['diseases'].append(_choose_disease(annotated))
     d['counts'].append(_choose_count(annotated, clf_counts))
     d['date'].append(_choose_date(annotated, clf_dates))
-    # df.iat[index, 0] = None  # Set the just used annotated to None when done
     annotated = None
     return d
 
 
-def _annotate_all_tiers(annotated):
+def _annotate_all_tiers(text):
+    annotated = AnnoDoc(text)
     anno_tiers = [GeonameAnnotator(), CountAnnotator(), ResolvedKeywordAnnotator(), DateAnnotator()]
     if isinstance(annotated, AnnoDoc):
         for tier in anno_tiers:
             annotated.add_tiers(tier)
-            annotated = delete_non_epitator_name_entity_tiers(annotated)
     return annotated
 
 
@@ -81,7 +67,7 @@ def _choose_disease(annotated):
 def _choose_date(annotated, clf):
     try:
         classifier = clf
-        extracted_sentences = extract_sentence_from_found_entities(annotated, 'dates')
+        _, extracted_sentences = extract_entities_with_sentence(annotated, 'dates')
         cleaned_sentences = [remove_stop_words(sentence) for sentence in extracted_sentences]
         list_of_proba_false_and_true = classifier.predict_proba(cleaned_sentences)
         mask_of_maximum = [True if all(i == max(list_of_proba_false_and_true, key=itemgetter(1)))
@@ -91,7 +77,7 @@ def _choose_date(annotated, clf):
         relevant_spans = list(compress(date_spans, mask_of_maximum))
         date = [span.datetime_range for span in relevant_spans]
 
-    except (KeyError, ValueError) as  e:
+    except (KeyError, ValueError) as e:
         print(e)
         date = None
     return date
@@ -100,7 +86,7 @@ def _choose_date(annotated, clf):
 def _choose_count(annotated, clf):
     try:
         classifier = clf
-        extracted_sentences = extract_sentence_from_found_entities(annotated, 'counts')
+        _, extracted_sentences = extract_entities_with_sentence(annotated, 'counts')
         cleaned_sentences = [remove_stop_words(sentence) for sentence in extracted_sentences]
         list_of_proba_false_and_true = classifier.predict_proba(cleaned_sentences)
         mask_of_maximum = [True if all(i == max(list_of_proba_false_and_true, key=itemgetter(1)))
@@ -109,7 +95,14 @@ def _choose_count(annotated, clf):
         date_spans = annotated.tiers['counts'].spans
         relevant_spans = list(compress(date_spans, mask_of_maximum))
         count = [span.metadata['count'] for span in relevant_spans]
-    except (KeyError, ValueError) as  e:
+    except (KeyError, ValueError) as e:
         print(e)
         count = None
     return count
+
+
+def extract_sentence_from_found_entities(annotated, entity):
+    word_to_metadata = {span.text: span.metadata for span in annotated.tiers[entity].spans}
+    found_words = set(word_to_metadata.keys())
+    sentences = sent_tokenize(annotated.text)
+    return None
