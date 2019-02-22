@@ -1,7 +1,6 @@
 from operator import itemgetter
 
 from nltk import sent_tokenize
-from memory_profiler import profile
 from collections import defaultdict
 from itertools import compress
 from epitator.annotator import AnnoDoc
@@ -22,7 +21,6 @@ def annotate_and_summarize(text, clf_dates, clf_counts):
     d['diseases'].append(_choose_disease(annotated))
     d['counts'].append(_choose_count(annotated, clf_counts))
     d['date'].append(_choose_date(annotated, clf_dates))
-    annotated = None
     return d
 
 

@@ -2,11 +2,9 @@ import luigi
 import pickle
 import os
 import pandas as pd
-from functools import partial
-from multiprocessing import Pool, Manager
 from luigi import format
 from tqdm import tqdm
-import time
+from pickle import UnpicklingError
 
 from utils.my_utils import flatten_list
 from nlp_surveillance.event_db_preprocessing import event_db
@@ -26,7 +24,10 @@ class LuigiTaskWithDataOutput(luigi.Task):
 
     def data_output(self):
         with self.output().open('r') as handler:
-            data = pickle.load(handler)
+            try:
+                data = pickle.load(handler)
+            except UnpicklingError:
+                data = pd.read_csv(handler)
         return data
 
 
@@ -168,104 +169,14 @@ class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
     def run(self):
         with self.input().open('r') as handler:
             df_to_extract_from = pickle.load(handler)
-        df_to_extract_from['extracted_text'] = df_to_extract_from.URL.apply(text_extractor.extract_cleaned_text_from_url)
+        df_to_extract_from['extracted_text'] = (df_to_extract_from.URL
+                                                .apply(text_extractor.extract_cleaned_text_from_url))
         with self.output().open('w') as handler:
             pickle.dump(df_to_extract_from, handler)
 
 
-# class AnnotateDoc(LuigiTaskWithDataOutput):
-#     source = luigi.Parameter()
-#
-#     def requires(self):
-#         return ScrapeFromURLsAndExtractText(self.source)
-#
-#     def output(self):
-#         return luigi.LocalTarget(format_path(f'../data/{self.source}/with_annodoc.pkl'), format=luigi.format.Nop)
-#
-#     def run(self):
-#         with self.input().open('r') as handler:
-#             df_with_text = pickle.load(handler)
-#         print(df_with_text)
-#         df_with_text['extracted_text'] = df_with_text['extracted_text'].apply(lambda x: AnnoDoc(x) if x else x)
-#         df_with_text = df_with_text.rename(columns={'extracted_text': 'annotated'})
-#         with self.output().open('w') as handler:
-#             pickle.dump(df_with_text, handler)
-
-
-# class AnnotateTier(LuigiTaskWithDataOutput):
-#     source = luigi.Parameter()
-#
-#     def requires(self):
-#         return AnnotateDoc(self.source)
-
-#
-# class AnnotateDisease(AnnotateTier):
-#
-#     def output(self):
-#         return luigi.LocalTarget(format_path(f'../data/{self.source}/disease_tier.pkl'), format=luigi.format.Nop)
-#
-#     def run(self):
-#         with self.input().open('r') as handler:
-#             df_with_anno_doc = pickle.load(handler)
-#         df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
-#                                                                       (delete_non_epitator_name_entity_tiers(
-#                                                                           x.add_tiers(ResolvedKeywordAnnotator()))
-#                                                                        if isinstance(x, AnnoDoc) else x))
-#         with self.output().open('w') as handler:
-#             pickle.dump(df_with_anno_doc, handler)
-#
-#
-# class AnnotateCount(AnnotateTier):
-#
-#     def output(self):
-#         return luigi.LocalTarget(format_path(f'../data/{self.source}/count_tier.pkl'), format=luigi.format.Nop)
-#
-#     def run(self):
-#         with self.input().open('r') as handler:
-#             df_with_anno_doc = pickle.load(handler)
-#         df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
-#                                                                       (delete_non_epitator_name_entity_tiers(
-#                                                                           x.add_tiers(CountAnnotator()))
-#                                                                        if isinstance(x, AnnoDoc) else x))
-#         with self.output().open('w') as handler:
-#             pickle.dump(df_with_anno_doc, handler)
-#
-#
-# class AnnotateGeonames(AnnotateTier):
-#
-#     def output(self):
-#         return luigi.LocalTarget(format_path(f'../data/{self.source}/country_tier.pkl'), format=luigi.format.Nop)
-#
-#     def run(self):
-#         with self.input().open('r') as handler:
-#             df_with_anno_doc = pickle.load(handler)
-#         df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
-#                                                                       (delete_non_epitator_name_entity_tiers(
-#                                                                           x.add_tiers(GeonameAnnotator()))
-#                                                                        if isinstance(x, AnnoDoc) else x))
-#         with self.output().open('w') as handler:
-#             pickle.dump(df_with_anno_doc, handler)
-#
-#
-# class AnnotateDate(AnnotateTier):
-#
-#     def output(self):
-#         return luigi.LocalTarget(format_path(f'../data/{self.source}/date_tier.pkl'), format=luigi.format.Nop)
-#
-#     def run(self):
-#         with self.input().open('r') as handler:
-#             df_with_anno_doc = pickle.load(handler)
-#         df_with_anno_doc.annotated = df_with_anno_doc.annotated.apply(lambda x:
-#                                                                       (delete_non_epitator_name_entity_tiers(
-#                                                                           x.add_tiers(DateAnnotator()))
-#                                                                        if isinstance(x, AnnoDoc) else x))
-#
-#         with self.output().open('w') as handler:
-#             pickle.dump(df_with_anno_doc, handler)
-
-
 class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
-    to_learn = luigi.Parameter()
+    to_learn: str = luigi.Parameter()
 
     def requires(self):
         return ScrapeFromURLsAndExtractText('event_db')
@@ -277,13 +188,15 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
     def run(self):
         learn_to_column = {'dates': 'date_of_data', 'counts': 'count_edb'}
         db_entity = learn_to_column[self.to_learn]
+
         with self.input().open('r') as handler:
             df_with_text = pickle.load(handler)[[db_entity, 'extracted_text']].dropna()
-        list_of_sentence_label_tuples_per_text = (extract_sentence.from_entity(row.extracted_text,
-                                                                               self.to_learn,
-                                                                               getattr(row, db_entity))
-                                                  for row in df_with_text.itertuples())
-        sentence_label_df = pd.DataFrame(flatten_list(list_of_sentence_label_tuples_per_text),
+
+        sentence_label_tuples_per_text: list = (extract_sentence.from_entity(row.extracted_text,
+                                                                             self.to_learn,
+                                                                             getattr(row, db_entity))
+                                                for row in df_with_text.itertuples())
+        sentence_label_df = pd.DataFrame(flatten_list(sentence_label_tuples_per_text),
                                          columns=['sentence', 'label'])
         with self.output().open('w') as handler:
             pickle.dump(sentence_label_df, handler)
@@ -333,48 +246,6 @@ class RecommenderLabeling(LuigiTaskWithDataOutput):
         with self.output().open('w') as handler:
             scraped_with_label.to_csv(handler, index=False)
 
-# class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
-#
-#     def requires(self):
-#         return RecommenderLabeling()
-#
-#     def output(self):
-#         return luigi.LocalTarget(format_path('../data/recommender/with_entities.pkl'),
-#                                  format=luigi.format.Nop)
-#
-#     @profile
-#     def run(self):
-#         index = 0
-#         try:
-#             while True:
-#                 with self.input().open('r') as handler:
-#                     annotated = pickle.load(handler)['annotated'].iloc[index]
-#
-#                 recommender_with_entities = summarize.annotate_and_summarize(annotated,
-#                                                                              TrainNaiveBayes('dates').data_output(),
-#                                                                              TrainNaiveBayes('counts').data_output())
-#                 with open(f'batch_{index}.pkl', 'wb') as batch_handle:
-#                     pickle.dump(recommender_with_entities, batch_handle)
-#                 index += 1
-#                 #gc.enable()
-#         except IndexError:
-#             pass
-#
-#         batches = [file for file in os.listdir() if 'batch' in file]
-#
-#         first = batches[0]
-#         with open(first, 'rb') as batch_handle:
-#             recommender_with_entities = pickle.load(batch_handle)
-#             recommender_with_entities = [recommender_with_entities]
-#         for batch in batches[1:]:
-#             with open(batch, 'rb') as batch_handle:
-#                 to_append = pickle.load(batch_handle)
-#                 recommender_with_entities.append(to_append)
-#         recommender_with_entities = [pd.DataFrame(d) for d in recommender_with_entities]
-#         concatted = pd.concat(recommender_with_entities, ignore_index=True)
-#         with self.output().open('w') as handler:
-#             pickle.dump(concatted, handler)
-
 
 class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
 
@@ -391,20 +262,14 @@ class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
             text_with_label = pd.read_csv(handler)
             texts = text_with_label['extracted_text'].tolist()
             label = text_with_label['label'].tolist()
-            text_with_label = None
 
-        summarize_text = partial(summarize.annotate_and_summarize,
-                                 clf_dates=TrainNaiveBayes('dates').data_output(),
-                                 clf_counts=TrainNaiveBayes('counts').data_output(),
-                                 )
         dicts = []
-        for text in texts:
-            print(text)
-            dicts.extend(summarize_text(text))
-        # for i in tqdm(range(0, len(texts), 10)):
-            # with Pool(2) as p:
-            #     summarized = p.map(summarize_text, texts[i:min(len(texts), i+10)])
-            #     dicts.extend(summarized)
+        for text in tqdm(texts):
+            dicts.append(summarize.annotate_and_summarize
+                         (text,
+                          clf_dates=TrainNaiveBayes('dates').data_output(),
+                          clf_counts=TrainNaiveBayes('counts').data_output(),
+                          ))
 
         entities_and_label = pd.concat([pd.DataFrame(dicts), pd.DataFrame({'label': label, 'text': texts})], axis=1)
         entities_and_label_unpacked = entities_and_label.applymap(lambda x: x[0] if isinstance(x, list) else x)
