@@ -1,96 +1,56 @@
-import warnings
-import pandas as pd
-from nltk import sent_tokenize
+from nltk.tokenize import PunktSentenceTokenizer
 from itertools import product
-from functools import partial
-
-from utils.my_utils import split_list_and_distribute_to_new_rows
-
-
-def from_entity(event_db, to_optimize):
-    event_db = _drop_unnecessary_columns_and_nans(event_db, to_optimize)
-
-    extract_sentences = partial(extract_sentence_from_found_entities, to_optimize=to_optimize)
-    event_db['sentences'] = event_db.annotated.apply(extract_sentences)
-
-    extract_entity = partial(_extract_entities_from_sentence, to_optimize=to_optimize)
-    event_db[to_optimize] = event_db.annotated.apply(extract_entity)
-
-    num_of_sent_and_entities_match = (event_db[['sentences', to_optimize]]
-                                      .apply(lambda x: len(x[0]) == len(x[1]), axis=1))
-    if not all(num_of_sent_and_entities_match):
-        warnings.warn('There are unequal amounts of text and entities extracted')
-        event_db = event_db[num_of_sent_and_entities_match]
-
-    event_db['list_of_sentence_entity_tuples'] = event_db[['sentences', to_optimize]].apply(lambda x: list(zip(*x)),
-                                                                                            axis=1)
-    event_db = split_list_and_distribute_to_new_rows(event_db, 'list_of_sentence_entity_tuples')
-    event_db[['sentence', to_optimize]] = event_db.list_of_sentence_entity_tuples.apply(pd.Series)
-    return event_db.drop(columns=['annotated', 'sentences', 'list_of_sentence_entity_tuples'])
+from collections import namedtuple
+from epitator.annotator import AnnoDoc
+from epitator.count_annotator import CountAnnotator
+from epitator.date_annotator import DateAnnotator
+from nlp_surveillance.classifier.create_labels import create_labels
 
 
-def _drop_unnecessary_columns_and_nans(event_db, to_optimize):
-    optimize_to_column_dict = {'dates': 'date_of_data', 'counts': 'count_edb'}
-    column_to_optimize = optimize_to_column_dict[to_optimize]
-
-    event_db = event_db[[column_to_optimize, 'annotated']]
-    event_db = event_db.dropna()
-
-    text_long_enough = event_db.annotated.apply(lambda x: len(x.text) > 200)
-    return event_db[text_long_enough]
+def from_entity(text, to_optimize, event_db_entry):
+    annotated = _annotate(text, to_optimize)
+    entities, sentences = extract_entities_with_sentence(annotated, to_optimize)
+    labels = create_labels(entities, to_optimize, event_db_entry)
+    label_sentence_tuple = namedtuple('label_sentence_tuple', ['label', 'sentence'])
+    label_sentence_tuples = [label_sentence_tuple(*tuple_) for tuple_ in zip(labels, sentences)]
+    return label_sentence_tuples
 
 
-def extract_sentence_from_found_entities(annotated, to_optimize):
-    sentence_span_to_sentence_dict = _sentence_span_to_sentence_dict(annotated)
-
-    entity_spans_as_objects = annotated.tiers[to_optimize].spans
-    entity_spans = (range(span.start, span.end) for span in entity_spans_as_objects)
-
-    matched_sentences = _return_matching_sentences(entity_spans, sentence_span_to_sentence_dict)
-    return list(matched_sentences)
+def _annotate(sentence, to_optimize):
+    tier = {'counts': CountAnnotator(), 'dates': DateAnnotator()}
+    annotated = AnnoDoc(sentence)
+    annotated.add_tiers(tier[to_optimize])
+    return annotated
 
 
-def _sentence_span_to_sentence_dict(annotated):
-    sentences = sent_tokenize(annotated.text)
+def extract_entities_with_sentence(annotated, to_optimize):
+    sentence_spans = PunktSentenceTokenizer().span_tokenize(annotated.text)
+    span_entity_dict = _create_span_entity_dict(annotated, to_optimize)
+    matched_entity_sentence_spans = _match_entity_and_sentence_spans(span_entity_dict.keys(), sentence_spans)
+    entities = [span_entity_dict[tuple_.entity_span] for tuple_ in matched_entity_sentence_spans]
+    sentences = [annotated.text[slice(*tuple_.sentence_span)]
+                 for tuple_ in matched_entity_sentence_spans]
+    return entities, sentences
 
-    calculate_sentence_span = _generate_span_calculator()
-    sentence_spans = (calculate_sentence_span(sent) for sent in sentences)
-    return dict(zip(sentence_spans, sentences))
+
+def _match_entity_and_sentence_spans(entity_spans, sentence_spans):
+    cartesian_product = product(entity_spans, sentence_spans)
+    entity_sentence_tuple = namedtuple('entity_sentence', ['entity_span', 'sentence_span'])
+    list_of_found_entity_sentence_spans = list(filter(_overlap, cartesian_product))
+    list_of_found_entity_sentence_spans_named = [entity_sentence_tuple(*tuple_) for tuple_ in
+                                                 list_of_found_entity_sentence_spans]
+    return list_of_found_entity_sentence_spans_named
 
 
-def _extract_entities_from_sentence(annotated, to_optimize):
+def _create_span_entity_dict(annotated, to_optimize):
     spans = annotated.tiers[to_optimize].spans
-    if to_optimize == 'dates':
-        entities = [span.metadata['datetime_range'] for span in spans]
-    elif to_optimize == 'counts':
-        entities = [span.metadata['count'] for span in spans]
-    else:
-        raise NotImplementedError
-    return entities
+    to_metadata_attr = {'counts': 'count', 'dates': 'datetime_range'}
+    attribute = to_metadata_attr[to_optimize]
+    span_entity_dict = {(span.start, span.end): span.metadata[attribute] for span in spans}
+    return span_entity_dict
 
 
-def _zip_sentence_and_entities(to_optimze):
-    pass
-
-
-def _generate_span_calculator():
-    start = 0
-
-    def add_length_of_string(sentence):
-        nonlocal start
-        start_sent = start
-        end_of_sent = start + len(sentence) + 1
-        start = end_of_sent
-        return range(start_sent, end_of_sent)
-
-    return add_length_of_string
-
-
-def _return_matching_sentences(entity_spans, sentence_span_to_sentence_dict):
-    for entity_span, sentence_span in product(entity_spans, sentence_span_to_sentence_dict.keys()):
-        if _span_subset_of(entity_span, sentence_span):
-            yield sentence_span_to_sentence_dict[sentence_span]
-
-
-def _span_subset_of(a_span, another_span):
-    return set(a_span).issubset(another_span)
+def _overlap(tuple_of_tuples):
+    entity_span, sent_span = tuple_of_tuples
+    if sent_span[0] <= entity_span[0] and entity_span[1] <= sent_span[1]:
+        return True
