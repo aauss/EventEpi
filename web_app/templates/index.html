@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <link rel = "stylesheet"
+   type = "text/css"
+   href = "/css/uikit.min.css" />
+   <link rel="stylesheet"
+   type="text/css"
+   href="/css/datatables.min.css"/>
+    <title>Flask App</title>
+  </head>
+  <body>
+     <!-- background="/images/bg.png" > -->
+    <h1 align="center" class="uk-heading-divider">Aussinator</h1>
+    <form  method="post" id="form">
+      <label  for="url">Enter an URL : </label>
+      <input class="uk-input uk-form-width-large" placeholder="Give Aussi some URLs, lool" type="text" id="url" name="url_input" autofocus autocomplete="off">
+      <button class="uk-button uk-button-dark">Summarize</button>
+    </form>
+    <br> </br>
+    <p id="output"></p>
+    <br> </br>
+    <table id="example" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Disease</th>
+                <th>Country</th>
+                <th>Confirmed Cases</th>
+                <th>Date Of Case Count</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+              <th>Disease</th>
+              <th>Country</th>
+              <th>Confirmed Cases</th>
+              <th>Date Of Case Count</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <script type="text/javascript"
+    src="/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript"
+    src="/js/datatables.min.js"></script>
+    <script src="/js/uikit.min.js"></script>
+
+     <script>
+
+
+
+
+    const table  = $('#example').DataTable( {
+        "ajax": '/js/table.json',
+        "columns": [
+            { "data": "disease" },
+            { "data": "country" },
+            { "data": "confirmed" },
+            { "data": "date" },
+        ],
+        dom: 'Bfrtip',
+        buttons: [
+            'copy', 'csv', 'excel', 'pdf', 'print'
+        ]
+    } );
+
+
+$('#form').on('submit', function(event){
+  var url_input = $('#url').val();
+  event.preventDefault();
+  $.ajax({
+    url: '/square',
+    data: {'url_input': url_input},
+    method: 'POST',
+    success: data => {
+      table.ajax.reload();
+      $('#url').val('');
+      $('#output').html(data['parsed_formatted'])
+    }
+  });
+});
+    </script>
+  </body>
+</html>
