@@ -1,7 +1,7 @@
 import requests
 import re
 import pandas as pd
-
+from tqdm import tqdm
 from utils import my_utils
 
 
@@ -24,11 +24,12 @@ def _get_article_ids_per_year(from_year='2018', to_year='2018', proxy=None):
                                                           f'date2=12/31/{to_year}&feed_id=1&submit=next',
                                                           proxies=proxy)
                                              .content
-                                             .decode('utf-8'))
+                                             .decode('utf-8')
+                                             )
 
     content = _get_content_of_search_page(0)
     max_page_num = re.search(r'Page \d+ of (\d+)', content)[1]
     ids_of_pages = (re.findall(r'id(\d+)', _get_content_of_search_page(i))
-                    for i in range(int(max_page_num)))
+                    for i in tqdm(range(int(max_page_num))))
     urls_with_ids = my_utils.flatten_list(ids_of_pages)
     return urls_with_ids

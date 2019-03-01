@@ -2,13 +2,16 @@ import requests
 import urllib.request
 import pandas as pd
 from bs4 import BeautifulSoup
+from itertools import product
+from operator import itemgetter
 
 from utils import my_utils
 
 
 def scrape(list_of_years=None, months=None, headers=None, proxy=None):
+    # months as lowercase string
     # Scrapes the WHO DONs using the WHO DON scraping functions and returns the links to these DONs
-    if not isinstance(list_of_years, list):
+    if list_of_years and not isinstance(list_of_years, list):
         list_of_years = [list_of_years]
 
     if not _connection_is_possible() and proxy is not None:
@@ -28,15 +31,18 @@ def _get_links_by_year(list_of_years=None, proxy=None, headers=None):
     soup = BeautifulSoup(page.content, 'html.parser')
     archive_years = soup.find('ul', attrs={'class': 'list'})
     years_links_html = archive_years.find_all('a')
+    years_as_str = ['http://www.who.int' + link.get('href') for link in years_links_html]
     if list_of_years:
-        return ['http://www.who.int' + link.get('href') for link in years_links_html if
-                any(year in link for year in list_of_years)]
+        list_of_years = list(map(str,list_of_years))
+        return [link for link in years_as_str if get_date(link) in list_of_years]
     else:
-        return ['http://www.who.int' + link.get('href') for link in years_links_html]
+        return years_as_str
 
 
 def _get_links_per_year(years_links, list_of_months=None, proxy=None, headers=None):
     # Take a list of links to the annual archive and return a list of DON links of these years
+    if list_of_months and not isinstance(list_of_months, list):
+        list_of_months = [list_of_months]
 
     all_links = []
 
@@ -48,8 +54,11 @@ def _get_links_per_year(years_links, list_of_months=None, proxy=None, headers=No
         all_links.extend(daily_links)
 
     if list_of_months:
-        all_links = [link for link in all_links if
-                     any(month in link for month in map(lambda s: s.lower(), list_of_months))]
+        cartesian_product = list(product(list_of_months, all_links))
+        where_month_in_link = list(filter(lambda month_link_tuple:
+                                          month_link_tuple[0] in month_link_tuple[1], cartesian_product))
+        only_links_kept = list(map(itemgetter(1), where_month_in_link))
+        all_links = only_links_kept
     return all_links
 
 
@@ -60,3 +69,6 @@ def _connection_is_possible():
     except urllib.request.URLError:
         return False
 
+
+def get_date(url):
+    return ''.join(list(filter(str.isdigit, url)))
