@@ -1,35 +1,70 @@
 import requests
 import re
 import pandas as pd
-from tqdm import tqdm
-from utils import my_utils
+from functools import partial
+from tqdm import tqdm_notebook as tqdm
 
 
-def scrape(list_of_years, proxy=None):
-    if not isinstance(list_of_years, list):
-        list_of_years = [list_of_years]
+from nlp_surveillance.scraper.text_extractor import get_html_from_promed_url
+
+
+def scrape(from_date, to_date, proxy=None):
+    # Date in the form mm/dd/YYYY
     # If from_year and to_year are the same, all URLs of of all articles of this year are scraped
-    ids = _get_article_ids_per_year(from_year=min(list_of_years),
-                                    to_year=max(list_of_years),
+    ids = _get_article_ids_per_year(from_date=from_date,
+                                    to_date=to_date,
                                     proxy=proxy)
     parsed = [f'https://www.promedmail.org/post/{str(id_)}' for id_ in ids]
     urls = pd.DataFrame({'URL': parsed})
     return urls
 
 
-def _get_article_ids_per_year(from_year='2018', to_year='2018', proxy=None):
-    _get_content_of_search_page = lambda x: (requests.get(f'https://www.promedmail.org/ajax/runSearch.php?'
-                                                          f'pagenum={x}&kwby1=summary&'
-                                                          f'search=&date1=01/01/{from_year}&'
-                                                          f'date2=12/31/{to_year}&feed_id=1&submit=next',
-                                                          proxies=proxy)
-                                             .content
-                                             .decode('utf-8')
-                                             )
+def _get_article_ids_per_year(from_date='01/01/2018', to_date='12/31/2018', proxy=None):
+    # date in the format mm/dd/YYYY
+    # adjust from_date to valid smallest date
+    from_date = _correct_to_earliest_allowed_date(from_date)
+    get_content_of_search_page = partial(_get_content_of_search_page,
+                                         from_date=from_date,
+                                         to_date=to_date,
+                                         proxy=proxy)
 
-    content = _get_content_of_search_page(0)
-    max_page_num = re.search(r'Page \d+ of (\d+)', content)[1]
-    ids_of_pages = (re.findall(r'id(\d+)', _get_content_of_search_page(i))
-                    for i in tqdm(range(int(max_page_num))))
-    urls_with_ids = my_utils.flatten_list(ids_of_pages)
-    return urls_with_ids
+    content_first_page = get_content_of_search_page(page_num=2)
+    max_page_num = re.search(r'Page -?\d+ of (\d+)', content_first_page)[1]
+    ids = []
+    for i in tqdm(range(2, int(max_page_num) + 2)):
+        ids_of_pages = re.findall(r'id(\d+)', get_content_of_search_page(page_num=i))
+        if ids_of_pages:
+            ids.extend(ids_of_pages)
+        else:
+            # After around 200 pages, promed is returning an error message instead of the next page of URLs
+            break
+    if ids and int(max_page_num) > 199:
+        last_id_before_error = ids[-1]
+        ids.extend(_recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error, from_date))
+    return ids
+
+
+def _correct_to_earliest_allowed_date(from_date):
+    corrected_date = max(pd.Timestamp(day=int(from_date[3:5]), month=int(from_date[0:2]), year=int(from_date[6:11])),
+                         pd.Timestamp(day=20, month=8, year=1994))
+    return corrected_date.strftime('%m/%d/%Y')
+
+
+def _get_content_of_search_page(from_date, to_date, page_num, proxy):
+    return (requests
+            .get(f'https://www.promedmail.org/ajax/runSearch.php?'
+                 f'pagenum={page_num}&'
+                 f'search=&date1={from_date}&'
+                 f'date2={to_date}',
+                 proxies=proxy)
+            .content
+            .decode('utf-8')
+            )
+
+
+def _recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error, from_date):
+        html = get_html_from_promed_url(last_id_before_error)
+        published_date = re.search(r'Published Date:.* (\d\d\d\d-\d\d-\d\d)', html)[1]
+        last_date_as_mm_dd_yyyy = f'{published_date[5:7]}/{published_date[8:10]}/{published_date[0:4]}'
+        return _get_article_ids_per_year(from_date=from_date, to_date=last_date_as_mm_dd_yyyy)
+
