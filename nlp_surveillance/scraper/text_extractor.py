@@ -19,7 +19,7 @@ def extract_cleaned_text_from_url(url):
             extracted = _extract_cleaned_text_from_pdf(url)
         else:
             if 'promed' in url:
-                html = _get_html_from_promed_url(url)
+                html = get_html_from_promed_url(url)
                 kwargs = {'html': html}
             extracted = _extract_cleaned_text_from_html_webpage(**kwargs)
         return _remove_control_characters(extracted)
@@ -47,7 +47,7 @@ def _extract_cleaned_text_from_html_webpage(**kwargs):
     return text
 
 
-def _get_html_from_promed_url(url):
+def get_html_from_promed_url(url):
     id_ = re.search(r'(\d+)', url)[0]
     url = f'http://www.promedmail.org/ajax/getPost.php?alert_id={id_}'
     ajax_request_for_post_as_html = requests.get(url, headers={"Referer": "http://www.promedmail.org/"}).json().get('post')
