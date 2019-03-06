@@ -9,7 +9,7 @@
    href="/css/datatables.min.css"/>
     <title>Flask App</title>
   </head>
-  <body>
+  <body style="margin:0 auto; width:960px">
      <!-- background="/images/bg.png" > -->
     <h1 align="center" class="uk-heading-divider">Aussinator</h1>
     <form  method="post" id="form">
@@ -27,6 +27,8 @@
                 <th>Country</th>
                 <th>Confirmed Cases</th>
                 <th>Date Of Case Count</th>
+                <th>Relevance</th>
+                <th>Input Date</th>
             </tr>
         </thead>
         <tfoot>
@@ -35,6 +37,8 @@
               <th>Country</th>
               <th>Confirmed Cases</th>
               <th>Date Of Case Count</th>
+              <th>Relevance</th>
+                <th>Input Date </th>
             </tr>
         </tfoot>
     </table>
@@ -50,29 +54,45 @@
 
 
 
-    const table  = $('#example').DataTable( {
+    var table  = $('#example').DataTable( {
         "ajax": '/js/table.json',
         "columns": [
             { "data": "disease" },
             { "data": "country" },
             { "data": "confirmed" },
             { "data": "date" },
+            { "data": "relevance" },
+            { "data": "input_date" }
+
         ],
         dom: 'Bfrtip',
         buttons: [
+            {
+                text: 'Get WHO DONs',
+                action: function () {
+                    $.ajax({url: '/rerun_who',
+                            method: 'GET'}).done(function (){
+                                table.ajax.reload();
+                            });
+                }
+            },
             'copy', 'csv', 'excel', 'pdf', 'print'
         ]
     } );
+
+var table = $('#example').DataTable( {
+    ajax: "table.json"
+} );
 
 
 $('#form').on('submit', function(event){
   var url_input = $('#url').val();
   event.preventDefault();
   $.ajax({
-    url: '/square',
+    url: '/summarize',
     data: {'url_input': url_input},
     method: 'POST',
-    success: data => {
+    success: function(data) {
       table.ajax.reload();
       $('#url').val('');
       $('#output').html(data['parsed_formatted'])
