@@ -87,7 +87,7 @@ def calculate_relevanz(text):
 @app.route('/rerun_who', methods=['GET'])
 def rerun_who():
     print('I am used')
-    time.sleep(2)
+    time.sleep(5)
     with open('js/who.json', 'r') as f:
         who_dict = json.load(f)
     with open('js/table.json', 'r') as f:
