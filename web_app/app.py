@@ -53,10 +53,11 @@ def summarize(url=None):
                       'date': parsed["date"][0][0][0].strftime("%d, %B, %Y"),
                       'relevance': relevance,
                       'input_date': datetime.now().strftime('%Y-%b-%d'),
+                      'url': url,
                       }
-    parsed_formatted = (f'In {parsed_as_dict["country"]} are around {parsed_as_dict["confirmed"]} confirmed cases of '
-                        f'{parsed_as_dict["disease"]} as of {parsed_as_dict["date"]}')
-
+    parsed_formatted = (f'In {parsed_as_dict["country"]} are around {parsed_as_dict["confirmed"]} confirmed cases '
+                        f'of {parsed_as_dict["disease"]} as of {parsed_as_dict["date"]}')
+    parsed_formatted = 'test'
     data = {'parsed_formatted': str(parsed_formatted),
             'as_dict': parsed_as_dict,
             }
