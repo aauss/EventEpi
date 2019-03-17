@@ -1,0 +1,10 @@
+{
+    "model": {
+        "path": "sklearn.naive_bayes.BernoulliNB",
+        "hyperparameters":{
+            "alpha": 1,
+            "fit_prior": true
+        }
+
+    }
+}

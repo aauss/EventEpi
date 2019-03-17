@@ -1,0 +1,9 @@
+{
+    "model": {
+        "path": "sklearn.naive_bayes.ComplementNB",
+        "hyperparameters":{
+            "alpha": 1
+        }
+
+    }
+}

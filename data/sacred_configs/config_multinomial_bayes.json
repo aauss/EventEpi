@@ -1,0 +1,10 @@
+{
+    "model": {
+        "path": "sklearn.naive_bayes.MultinomialNB",
+        "hyperparameters":{
+            "alpha": 1,
+            "fit_prior": true
+        }
+
+    }
+}
