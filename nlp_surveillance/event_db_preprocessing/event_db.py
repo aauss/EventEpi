@@ -27,7 +27,7 @@ def _read_unprocessed(path=None):
         dirname = os.path.dirname(__file__)
         path = os.path.join(dirname, '..', '..', 'data', 'rki', 'edb.csv')
     event_db = pd.read_csv(path, sep=';')
-    event_db['columns'] = list(map(lambda x: x.strip(), event_db))
+    event_db.columns = list(map(lambda x: x.strip(), event_db))
     return event_db
 
 
@@ -40,7 +40,7 @@ def _rename_and_drop_unused_columns(event_db):
     columns_to_keep.extend(URLs)
     event_db = event_db.loc[:, columns_to_keep]
     # Rename columns
-    event_db['columns'] = ['country_edb', 'disease_edb', 'date_of_data', 'count_edb', 'URL_1', 'URL_2', 'URL_3', 'URL_4']
+    event_db.columns = ['country_edb', 'disease_edb', 'date_of_data', 'count_edb', 'URL_1', 'URL_2', 'URL_3', 'URL_4']
     return event_db
 
 
