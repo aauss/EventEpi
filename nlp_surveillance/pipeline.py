@@ -169,6 +169,7 @@ class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
     def run(self):
         with self.input().open('r') as handler:
             df_to_extract_from = pickle.load(handler)
+
         df_to_extract_from['extracted_text'] = (df_to_extract_from.URL
                                                 .apply(text_extractor.extract_cleaned_text_from_url))
         with self.output().open('w') as handler:
@@ -215,9 +216,11 @@ class TrainNaiveBayes(LuigiTaskWithDataOutput):
     def run(self):
         with self.input().open('r') as handler:
             to_learn_df = pickle.load(handler)
+
         classifier, classification_report, confusion_matrix = naive_bayes.learn(to_learn_df)
         print(f'this is the NB classification report {classification_report}')
         print(f'this is the NB confusion matrix {confusion_matrix}')
+
         with self.output().open('w') as handler:
             pickle.dump(classifier, handler)
 
@@ -239,10 +242,12 @@ class RecommenderLabeling(LuigiTaskWithDataOutput):
             promed_urls_and_text = pickle.load(handler)
         with self.input()['event_db'].open('r') as handler:
             cleaned_event_db = pickle.load(handler)
+
         all_scraped = pd.concat([who_urls_and_text, promed_urls_and_text]).reset_index(drop=True)
         urls_as_true_label = cleaned_event_db['URL']
         all_scraped['label'] = all_scraped['URL'].apply(lambda x: x in set(urls_as_true_label))
         scraped_with_label = all_scraped.drop(columns='URL')
+
         with self.output().open('w') as handler:
             scraped_with_label.to_csv(handler, index=False)
 
@@ -273,6 +278,7 @@ class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
 
         entities_and_label = pd.concat([pd.DataFrame(dicts), pd.DataFrame({'label': label, 'text': texts})], axis=1)
         entities_and_label_unpacked = entities_and_label.applymap(lambda x: x[0] if isinstance(x, list) else x)
+
         with self.output().open('w') as handler:
             pickle.dump(entities_and_label_unpacked, handler)
 
