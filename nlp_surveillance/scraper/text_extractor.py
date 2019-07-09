@@ -10,7 +10,6 @@ from socket import timeout
 
 
 def extract_cleaned_text_from_url(url):
-    kwargs = {'url': url}
     if url is None:
         return url
     else:
@@ -18,6 +17,7 @@ def extract_cleaned_text_from_url(url):
             tika.TikaClientOnly = True
             extracted = _extract_cleaned_text_from_pdf(url)
         else:
+            kwargs = {'url': url}
             if 'promed' in url:
                 html = get_html_from_promed_url(url)
                 kwargs = {'html': html}
