@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from itertools import product
 from operator import itemgetter
 
-from utils import my_utils
+from nlp_surveillance import my_utils
 
 
 def scrape(list_of_years=None, months=None, headers=None, proxy=None):
