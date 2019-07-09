@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 
-from utils import my_utils
+from nlp_surveillance import my_utils
 
 
 def to_translation_dict(country_lookup_df):
