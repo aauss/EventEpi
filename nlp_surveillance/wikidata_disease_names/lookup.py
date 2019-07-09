@@ -26,13 +26,13 @@ def _merge(disease_lookup, rki_abbreviations):
 
 
 def _to_translation_dict(disease_lookup):
-    de_to_en = list(zip(disease_lookup.itemLabel_DE,
-                        disease_lookup.itemLabel_EN))
+    de_to_en = list(zip(disease_lookup["itemLabel_DE"],
+                        disease_lookup["itemLabel_EN"]))
     # Necessary so that during lookup valid English disease names are preserved
-    en_to_en = list(zip(disease_lookup.itemLabel_EN,
-                        disease_lookup.itemLabel_EN))
-    abbreviation_to_en = list(zip(disease_lookup.abbreviation,
-                                  disease_lookup.itemLabel_EN))
+    en_to_en = list(zip(disease_lookup["itemLabel_EN"],
+                        disease_lookup["itemLabel_EN"]))
+    abbreviation_to_en = list(zip(disease_lookup["abbreviation"],
+                                  disease_lookup["itemLabel_EN"]))
     de_to_en.extend(en_to_en)
     abbreviation_to_en.extend(de_to_en)
     translation_dict = dict(abbreviation_to_en)
