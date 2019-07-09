@@ -9,7 +9,15 @@ from .clean_diseases import clean_diseases
 from .clean_urls import clean_urls
 
 
-def read_cleaned(path=None):
+def read_cleaned(path=None) -> pd.DataFrame:
+    """A method to apply all preprocessing steps for the incident database
+
+    Args:
+        path (str): Path of unprocessed incident database
+
+    Returns:
+        pd.DataFrame:
+    """
     event_db = _read_unprocessed(path=path)
     preprocessed_event_db = (event_db
                              .pipe(_rename_and_drop_unused_columns)
@@ -25,19 +33,19 @@ def read_cleaned(path=None):
 def _read_unprocessed(path=None):
     if path is None:
         dirname = os.path.dirname(__file__)
-        path = os.path.join(dirname, '..', '..', 'data', 'rki', 'edb.csv')
+        path = os.path.join(dirname, '..', '..', 'data', 'rki', 'idb.csv')
     event_db = pd.read_csv(path, sep=';')
     event_db.columns = list(map(lambda x: x.strip(), event_db))
     return event_db
 
 
 def _rename_and_drop_unused_columns(event_db):
-    URLs = list(filter(lambda x: 'Link zur Quelle' in x, event_db.columns))
+    urls = list(filter(lambda x: 'Link zur Quelle' in x, event_db.columns))
     columns_to_keep = ['Ausgangs- bzw. Ausbruchsland',
                        'Krankheitsbild(er)',
                        'Datenstand für Fallzahlen gesamt*',
                        'Fälle gesamt*']
-    columns_to_keep.extend(URLs)
+    columns_to_keep.extend(urls)
     event_db = event_db.loc[:, columns_to_keep]
     # Rename columns
     event_db.columns = ['country_edb', 'disease_edb', 'date_of_data', 'count_edb', 'URL_1', 'URL_2', 'URL_3', 'URL_4']
@@ -45,12 +53,13 @@ def _rename_and_drop_unused_columns(event_db):
 
 
 def _format_missing_data(event_db):
-    str_columns = ['country_edb', 'disease_edb', 'URL_1', 'URL_2', 'URL_3', 'URL_4']
-    event_db.loc[:, str_columns] = event_db.loc[:, str_columns].replace(['nan', '-', np.nan, '', '?', 'keine'],
-                                                                        [None] * 6)
+    text_columns = ['country_edb', 'disease_edb', 'URL_1', 'URL_2', 'URL_3', 'URL_4']
+    event_db.loc[:, text_columns] = event_db.loc[:, text_columns].replace(['nan', '-', np.nan, '', '?', 'keine'],
+                                                                          [None] * 6)
 
     numerical_columns = ['count_edb', 'date_of_data']
-    event_db.loc[:, numerical_columns] = event_db.loc[:, numerical_columns].replace(['nan', '-'], [np.nan] * 2)
+    event_db.loc[:, numerical_columns] = event_db.loc[:, numerical_columns].replace(['nan', '-'],
+                                                                                    [np.nan] * 2)
 
     event_db = event_db.dropna(how='all')
     return event_db
