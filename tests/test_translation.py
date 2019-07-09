@@ -1,6 +1,6 @@
 import pandas as pd
 
-from nlp_surveillance.translate import countries, diseases
+from nlp_surveillance.event_db_preprocessing import translate_diseases, translate_countries
 from nlp_surveillance.event_db_preprocessing.clean_diseases import clean_diseases
 from nlp_surveillance.pipeline import (MergeDiseaseNameLookupWithAbbreviationsOfRKI,
                                        CleanCountryLookUpAndAddAbbreviations)
@@ -16,7 +16,7 @@ def test_disease_translation():
                                                                   'gonorrhea',
                                                                   'pertussis',
                                                                   'Ebola virus disease']})
-    translated_diseases = diseases.translate(clean_diseases(example_diseases_to_translate), lookup)
+    translated_diseases = translate_diseases.translate(clean_diseases(example_diseases_to_translate), lookup)
     pd.testing.assert_frame_equal(translated_diseases, expected_diseases_translation)
 
 
@@ -27,11 +27,12 @@ def test_country_translation():
                                                                  "Kongo",
                                                                  "Taiwan",
                                                                  "Niger",
-                                                                 'DRC']})
-    expected_country_translation = pd.DataFrame({'country_edb': ['Italy',
-                                                                 'AbD1',
-                                                                 'Democratic Republic of the Congo',
-                                                                 'Taiwan oder Republic of China',
-                                                                 'Democratic Republic of the Congo']})
-    translated_countries = countries.translate(example_country_to_translate, lookup)
-    pd.testing.assert_frame_equal(translated_countries, example_country_to_translate)
+                                                                 "DRC"]})
+    expected_country_translation = pd.DataFrame({'country_edb': ["Italy",
+                                                                 "AbD1",
+                                                                 "Democratic Republic of the Congo",
+                                                                 "Taiwan oder Republic of China",
+                                                                 "Niger",
+                                                                 "Democratic Republic of the Congo"]})
+    translated_countries = translate_countries.translate(example_country_to_translate, lookup)
+    pd.testing.assert_frame_equal(translated_countries, expected_country_translation)
