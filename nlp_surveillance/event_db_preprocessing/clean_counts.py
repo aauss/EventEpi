@@ -4,10 +4,10 @@ import re
 def clean_counts(event_db):
     """Clean count columns of incident database to remove format errors
 
-    Args:
+    Args (pd.DataFrame):
         event_db (pd.DataFrame): Incident database without cleaned country names
 
-    Returns:
+    Returns (pd.DataFrame):
         Incident database with cleaned country names
 
     """

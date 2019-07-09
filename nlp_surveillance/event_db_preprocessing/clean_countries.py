@@ -13,10 +13,10 @@ def clean_countries(event_db):
     and where every other entry of the row is duplicated form the
     former row.
 
-    Args:
+    Args (pd.DataFrame):
         event_db: Incident database without cleaned country names
 
-    Returns:
+    Returns (pd.DataFrame):
         Incident database with cleaned country names
 
     """
