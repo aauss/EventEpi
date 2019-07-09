@@ -2,8 +2,17 @@ import re
 
 
 def clean_counts(event_db):
-    event_db.count_edb = event_db.count_edb.str.replace(',', '').str.replace('.', '').str.replace(' ', '')
-    event_db.count_edb = event_db.count_edb.apply(_keep_only_integers)
+    """Clean count columns of incident database to remove format errors
+
+    Args:
+        event_db (pd.DataFrame): Incident database without cleaned country names
+
+    Returns:
+        Incident database with cleaned country names
+
+    """
+    event_db.count_edb = event_db["count_edb"].str.replace(',', '').str.replace('.', '').str.replace(' ', '')
+    event_db.count_edb = event_db["count_edb"].apply(_keep_only_integers)
     return event_db
 
 
