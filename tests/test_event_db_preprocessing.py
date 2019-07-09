@@ -9,11 +9,15 @@ from nlp_surveillance.event_db_preprocessing.clean_urls import clean_urls
 
 def test_clean_countries():
     example_countries_to_clean = pd.DataFrame({'country_edb': [' Australien',
-                                                               'Kongo \nUSA', 'Italien, Deutschland, Belgien ',
-                                                               'Franz._Polynesien', 'Trinidad & Tobago']})
+                                                               'Kongo \nUSA', 'Italien (Tirol), Deutschland, Belgien ',
+                                                               'Franz._Polynesien', 'Trinidad & Tobago', "Süd Sudan",
+                                                               "Süd Korea", "Nordkorea",
+                                                               ]
+                                               })
     expected_clean_countries = pd.DataFrame({'country_edb': ['Australien', 'Kongo', 'USA',
                                                              'Italien', 'Deutschland', 'Belgien',
-                                                             'Franz. Polynesien', 'Trinidad und Tobago']})
+                                                             'Franz. Polynesien', 'Trinidad und Tobago', "Südsudan",
+                                                             "Süd Korea", "Nord Korea"]})
     cleaned_countries = clean_countries(example_countries_to_clean)
     pd.testing.assert_frame_equal(cleaned_countries, expected_clean_countries)
 
