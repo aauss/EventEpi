@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 
 
 def scrape_wikipedia_countries():
-    """Scrapes German Wikipedia article of list of states of the earth and returns dict with entries."""
+    """Scrapes Wikipedia article 'Liste der Staaten der Erde' (list of sovereign states) to create country name lookup
+    """
     soup = _get_soup()
     wiki_dict = {"state_name_de": [],
                  "full_state_name_de": [],

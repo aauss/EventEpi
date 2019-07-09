@@ -35,6 +35,7 @@ def abbreviate_wikipedia_country_df(wikipedia_country_df):
 
 def _abbreviate_country(country_name):
     """Abbreviates entries of list of country names
+
     Example: United Kingdom --> UK
     """
     abbreviation = None
