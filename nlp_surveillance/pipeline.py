@@ -6,12 +6,12 @@ from luigi import format
 from tqdm import tqdm
 from pickle import UnpicklingError
 
-from utils.my_utils import flatten_list
+from nlp_surveillance.my_utils import flatten_list
 from nlp_surveillance.event_db_preprocessing import event_db
-from nlp_surveillance.wikipedia_list_of_countries.scraper import scrape_wikipedia_countries
+from nlp_surveillance.wikipedia_list_of_countries import wikipedia
 from nlp_surveillance.wikipedia_list_of_countries.lookup import abbreviate_wikipedia_country_df, to_translation_dict
 from nlp_surveillance.wikipedia_list_of_countries.clean import clean_wikipedia_country_df
-from nlp_surveillance.wikidata_disease_names.wikidata import disease_name_query
+from nlp_surveillance.wikidata_disease_names import wikidata
 from nlp_surveillance.wikidata_disease_names.rki_abbreviations import get_rki_abbreviations
 from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_as_dict
 from nlp_surveillance.translate import diseases, countries
@@ -20,23 +20,40 @@ from nlp_surveillance.classifier import extract_sentence, naive_bayes, summarize
 
 
 class LuigiTaskWithDataOutput(luigi.Task):
-    # A class that allows my task to output data
 
     def data_output(self):
+        """Method to use luigi.LocalTarget (path of Luigi job output) to load it
+
+
+        Returns:
+            Some data that has been pickled during Luigi jobs
+
+        """
         with self.output().open('r') as handler:
             try:
                 data = pickle.load(handler)
             except UnpicklingError:
-                data = pd.read_csv(handler)
+                data = pd.read_csv(handler, encoding="utf-8")
         return data
 
 
 class CleanEventDB(LuigiTaskWithDataOutput):
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/event_db/cleaned.pkl'), format=luigi.format.Nop)
 
     def run(self):
+        """Reads the event_db from data folder and applies cleaning steps.
+
+        Event_db.read_cleaned(), if no other path is given, reads the event data
+        base from data/rki/edb.csv
+
+        """
         cleaned_event_db = event_db.read_cleaned()
         with self.output().open('w') as handler:
             pickle.dump(cleaned_event_db, handler)
@@ -45,11 +62,22 @@ class CleanEventDB(LuigiTaskWithDataOutput):
 class RequestDiseaseNamesFromWikiData(LuigiTaskWithDataOutput):
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/lookup/disease_lookup_without_abbreviation.pkl'),
                                  format=luigi.format.Nop)
 
     def run(self):
-        disease_lookup = disease_name_query()
+        """Create disease name dictionary from German to English
+
+        Makes a request to Wikidata to retrieve all disease names in English and
+        German.
+
+        """
+        disease_lookup = wikidata.disease_name_query()
         with self.output().open('w') as handler:
             pickle.dump(disease_lookup, handler)
 
@@ -57,20 +85,37 @@ class RequestDiseaseNamesFromWikiData(LuigiTaskWithDataOutput):
 class ScrapeCountryNamesFromWikipedia(LuigiTaskWithDataOutput):
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/lookup/country_lookup_without_abbreviation.pkl'),
                                  format=luigi.format.Nop)
 
     def run(self):
-        country_lookup = scrape_wikipedia_countries()
+        """Create country name dictionary from German to English
+
+        Makes a request to Wikidata to retrieve all disease names in English and
+        German.
+
+        """
+        country_lookup = wikipedia.scrape_wikipedia_countries()
         with self.output().open('w') as handler:
             pickle.dump(country_lookup, handler)
 
 
 class CleanCountryLookUpAndAddAbbreviations(LuigiTaskWithDataOutput):
+
     def requires(self):
         return ScrapeCountryNamesFromWikipedia()
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/lookup/country_lookup.pkl'), format=luigi.format.Nop)
 
     def run(self):
@@ -89,6 +134,11 @@ class MergeDiseaseNameLookupWithAbbreviationsOfRKI(LuigiTaskWithDataOutput):
         return RequestDiseaseNamesFromWikiData()
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/lookup/disease_lookup.pkl'), format=luigi.format.Nop)
 
     def run(self):
@@ -109,6 +159,11 @@ class ApplyControlledVocabularyToEventDB(LuigiTaskWithDataOutput):
                 'cleaned_event_db': CleanEventDB()}
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/event_db/with_controlled_vocab.pkl'), format=luigi.format.Nop)
 
     def run(self):
@@ -128,6 +183,11 @@ class ScrapePromed(LuigiTaskWithDataOutput):
     year_to_scrape = luigi.Parameter()
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path(f'../data/scraped/scraped_promed_{self.year_to_scrape}.pkl'),
                                  format=luigi.format.Nop)
 
@@ -141,6 +201,11 @@ class ScrapeWHO(LuigiTaskWithDataOutput):
     year_to_scrape = luigi.Parameter()
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path(f'../data/scraped/scraped_who_{self.year_to_scrape}.pkl'),
                                  format=luigi.format.Nop)
 
@@ -163,6 +228,11 @@ class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
             return ScrapeWHO('2018')
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path(f'../data/extracted_texts/{self.source}_extracted_text.pkl'),
                                  format=luigi.format.Nop)
 
@@ -183,6 +253,11 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
         return ScrapeFromURLsAndExtractText('event_db')
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path(f'../data/event_db/{self.to_learn}_with_sentences_and_label.pkl'),
                                  format=luigi.format.Nop)
 
@@ -210,6 +285,11 @@ class TrainNaiveBayes(LuigiTaskWithDataOutput):
         return ExtractSentencesAndLabel(self.to_learn)
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path(f'../data/classifier/{self.to_learn}_naive_bayes_clf.pkl'),
                                  format=luigi.format.Nop)
 
@@ -233,6 +313,11 @@ class RecommenderLabeling(LuigiTaskWithDataOutput):
                 'event_db': CleanEventDB()}
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/recommender/with_label.csv'))
 
     def run(self):
@@ -258,6 +343,11 @@ class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
         return RecommenderLabeling()
 
     def output(self):
+        """Specifies path for where to pickle output of Luigi job
+
+        Returns:
+            luigi.LocalTarget path object
+        """
         return luigi.LocalTarget(format_path('../data/recommender/with_entities.pkl'),
                                  format=luigi.format.Nop)
 
@@ -294,4 +384,3 @@ if __name__ == '__main__':
     # luigi.build([ScrapeFromURLsAndExtractText('event_db')], local_scheduler=True)
     # luigi.build([AnnotateDoc('who'), AnnotateDoc('promed')], local_scheduler=True)
     luigi.build([RecommenderTierAnnotation()], local_scheduler=True)
-
