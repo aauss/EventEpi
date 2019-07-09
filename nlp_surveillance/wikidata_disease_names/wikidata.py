@@ -1,10 +1,14 @@
-import os
 import pandas as pd
 
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 
-def disease_name_query():
+def disease_name_query() -> pd.DataFrame:
+    """Queries English and German disease names form Wikidata
+
+    Returns: Lookup of English and German disease names as DataFrame
+
+    """
     endpoint_url = "https://query.wikidata.org/sparql"
     query = """SELECT Distinct ?itemLabel_DE   ?itemLabel_EN WHERE {
                     ?item wdt:P31 wd:Q12136.
