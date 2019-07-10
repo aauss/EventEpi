@@ -28,7 +28,11 @@ def _get_article_ids_per_year(from_date='01/01/2018', to_date='12/31/2018', prox
                                          proxy=proxy)
 
     content_first_page = get_content_of_search_page(page_num=2)
-    max_page_num = re.search(r'Page -?\d+ of (\d+)', content_first_page)[1]
+    try:
+        max_page_num = re.search(r'Page -?\d+ of (\d+)', content_first_page)[1]
+    except TypeError:
+        # If there is only one result page, we won't find the regex pattern above
+        max_page_num = 1
     ids = []
     for i in tqdm(range(2, int(max_page_num) + 2)):
         ids_of_pages = re.findall(r'id(\d+)', get_content_of_search_page(page_num=i))
