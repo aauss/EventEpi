@@ -9,9 +9,21 @@ from urllib.error import URLError
 from socket import timeout
 
 
-def extract_cleaned_text_from_url(url):
-    if url is None:
-        return url
+    Returns:
+        Extracted text as string or None
+    """
+    # if url is None:
+    #     return url
+    # else:
+    if not my_utils.connection_is_possible():
+        import os
+        proxy = my_utils.load_rki_header_and_proxy_dict()["proxy"]
+        for proxy_type, proxy in proxy.items():
+            print(proxy_type, proxy)
+            os.environ[proxy_type] = proxy
+    if 'pdf' in url:
+        tika.TikaClientOnly = True
+        extracted = _extract_cleaned_text_from_pdf(url)
     else:
         if 'pdf' in url:
             tika.TikaClientOnly = True

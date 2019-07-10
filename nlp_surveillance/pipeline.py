@@ -237,10 +237,12 @@ class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
                                  format=luigi.format.Nop)
 
     def run(self):
+        """Takes a DataFrame with an URL column and adds the extracted text from boilerpipe to it
+        """
         with self.input().open('r') as handler:
             df_to_extract_from = pickle.load(handler)
-
-        df_to_extract_from['extracted_text'] = (df_to_extract_from.URL
+        df_to_extract_from = df_to_extract_from[df_to_extract_from["URL"].notna()]
+        df_to_extract_from['extracted_text'] = (df_to_extract_from["URL"]
                                                 .apply(text_extractor.extract_cleaned_text_from_url))
         with self.output().open('w') as handler:
             pickle.dump(df_to_extract_from, handler)
