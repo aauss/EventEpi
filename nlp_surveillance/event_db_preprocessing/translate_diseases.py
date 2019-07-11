@@ -14,8 +14,8 @@ def translate(event_db, disease_lookup):
         The incident database where all disease names transferred to a controlled vocabulary
 
     """
-    event_db.disease_edb = (event_db["disease_edb"][event_db["disease_edb"].notna()]
-                            .apply(lambda x: _translate_disease(x, disease_lookup)))
+    event_db["disease_edb"] = (event_db["disease_edb"][event_db["disease_edb"].notna()]
+                               .apply(lambda x: _translate_disease(x, disease_lookup)))
     return event_db
 
 

@@ -14,8 +14,8 @@ def translate(event_db, country_lookup):
         The incident database where all country names transferred to a controlled vocabulary
 
     """
-    event_db.country_edb = (event_db.country_edb[event_db.country_edb.notna()]
-                            .apply(lambda x: _translate_country(x, country_lookup)))
+    event_db["country_edb"] = (event_db["country_edb"][event_db["country_edb"].notna()]
+                               .apply(lambda x: _translate_country(x, country_lookup)))
     return event_db
 
 

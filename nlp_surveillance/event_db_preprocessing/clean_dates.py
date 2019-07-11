@@ -10,10 +10,10 @@ def to_datetime(event_db: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Incident database dates as strings
     """
-    event_db.date_of_data = event_db.date_of_data.apply(lambda x:
-                                                        pd.to_datetime(x,
-                                                                       dayfirst=True,
-                                                                       errors='coerce',
-                                                                       )
-                                                        )
+    event_db["date_of_data"] = event_db["date_of_data"].apply(lambda x:
+                                                              pd.to_datetime(x,
+                                                                             dayfirst=True,
+                                                                             errors='coerce',
+                                                                             )
+                                                              )
     return event_db

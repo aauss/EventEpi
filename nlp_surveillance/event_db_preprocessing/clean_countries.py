@@ -20,7 +20,7 @@ def clean_countries(event_db):
         Incident database with cleaned country names
 
     """
-    event_db.country_edb = event_db["country_edb"].apply(_clean_country_str)
+    event_db["country_edb"] = event_db["country_edb"].apply(_clean_country_str)
     event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'country_edb')
     return event_db
 
