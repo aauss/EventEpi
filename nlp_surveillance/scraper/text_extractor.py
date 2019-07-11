@@ -3,6 +3,8 @@ import logging
 import unicodedata
 import re
 import requests
+import urllib.request
+
 from tika import parser
 from boilerpipe.extract import Extractor
 from urllib.error import URLError
@@ -16,25 +18,23 @@ from socket import timeout
     #     return url
     # else:
     if not my_utils.connection_is_possible():
-        import os
+        urllib_proxy = {}
         proxy = my_utils.load_rki_header_and_proxy_dict()["proxy"]
         for proxy_type, proxy in proxy.items():
-            print(proxy_type, proxy)
-            os.environ[proxy_type] = proxy
+            urllib_proxy[proxy_type.replace("_proxy", "")] = proxy
+            proxy_support = urllib.request.ProxyHandler(urllib_proxy)
+            opener = urllib.request.build_opener(proxy_support)
+            urllib.request.install_opener(opener)
     if 'pdf' in url:
         tika.TikaClientOnly = True
         extracted = _extract_cleaned_text_from_pdf(url)
     else:
-        if 'pdf' in url:
-            tika.TikaClientOnly = True
-            extracted = _extract_cleaned_text_from_pdf(url)
-        else:
-            kwargs = {'url': url}
-            if 'promed' in url:
-                html = get_html_from_promed_url(url)
-                kwargs = {'html': html}
-            extracted = _extract_cleaned_text_from_html_webpage(**kwargs)
-        return _remove_control_characters(extracted)
+        kwargs = {'url': url}
+        if 'promed' in url:
+            html = get_html_from_promed_url(url)
+            kwargs = {'html': html}
+        extracted = _extract_cleaned_text_from_html_webpage(**kwargs)
+    return _remove_control_characters(extracted)
 
 
 def _extract_cleaned_text_from_pdf(url):
