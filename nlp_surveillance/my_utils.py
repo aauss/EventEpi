@@ -1,4 +1,6 @@
 import pickle
+import urllib.request
+
 import pandas as pd
 import numpy as np
 from operator import itemgetter
@@ -36,6 +38,14 @@ def flatten_list(to_flatten):
 def load_rki_header_and_proxy_dict():
     # TODO: when proxy is needed again, store this pickle in data/rki
     return pickle.load(open('scraping_params.p', 'rb'))
+
+
+def connection_is_possible():
+    try:
+        urllib.request.urlopen('https://www.rki.de/DE/Home/homepage_node.html', timeout=4)
+        return True
+    except urllib.request.URLError:
+        return False
 
 
 def split_strings_at_comma_and_distribute_to_new_rows(df, split_column, split_by=','):
