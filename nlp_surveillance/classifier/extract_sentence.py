@@ -33,6 +33,14 @@ def extract_entities_with_sentence(annotated, to_optimize):
     return entities, sentences
 
 
+def _create_span_entity_dict(annotated, to_optimize):
+    spans = annotated.tiers[to_optimize].spans
+    to_metadata_attr = {'counts': 'count', 'dates': 'datetime_range'}
+    attribute = to_metadata_attr[to_optimize]
+    span_entity_dict = {(span.start, span.end): span.metadata[attribute] for span in spans}
+    return span_entity_dict
+
+
 def _match_entity_and_sentence_spans(entity_spans, sentence_spans):
     cartesian_product = product(entity_spans, sentence_spans)
     entity_sentence_tuple = namedtuple('entity_sentence', ['entity_span', 'sentence_span'])
@@ -40,14 +48,6 @@ def _match_entity_and_sentence_spans(entity_spans, sentence_spans):
     list_of_found_entity_sentence_spans_named = [entity_sentence_tuple(*tuple_) for tuple_ in
                                                  list_of_found_entity_sentence_spans]
     return list_of_found_entity_sentence_spans_named
-
-
-def _create_span_entity_dict(annotated, to_optimize):
-    spans = annotated.tiers[to_optimize].spans
-    to_metadata_attr = {'counts': 'count', 'dates': 'datetime_range'}
-    attribute = to_metadata_attr[to_optimize]
-    span_entity_dict = {(span.start, span.end): span.metadata[attribute] for span in spans}
-    return span_entity_dict
 
 
 def _overlap(tuple_of_tuples):
