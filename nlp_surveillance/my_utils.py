@@ -1,4 +1,5 @@
 import pickle
+import os
 import urllib.request
 
 import pandas as pd
@@ -37,7 +38,8 @@ def flatten_list(to_flatten):
 
 def load_rki_header_and_proxy_dict():
     # TODO: when proxy is needed again, store this pickle in data/rki
-    return pickle.load(open('scraping_params.p', 'rb'))
+
+    return pickle.load(open(os.path.join(os.path.dirname(__file__), 'scraping_params.p'), 'rb'))
 
 
 def connection_is_possible():
