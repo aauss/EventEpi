@@ -7,15 +7,12 @@ from tqdm import tqdm
 from pickle import UnpicklingError
 
 from nlp_surveillance.my_utils import flatten_list
-from nlp_surveillance.event_db_preprocessing import event_db
-from nlp_surveillance.wikipedia_list_of_countries import wikipedia
-from nlp_surveillance.wikipedia_list_of_countries.lookup import abbreviate_wikipedia_country_df, to_translation_dict
-from nlp_surveillance.wikipedia_list_of_countries.clean import clean_wikipedia_country_df
-from nlp_surveillance.wikidata_disease_names import wikidata
-from nlp_surveillance.wikidata_disease_names.rki_abbreviations import get_rki_abbreviations
-from nlp_surveillance.wikidata_disease_names.lookup import merge_disease_lookup_as_dict
-from nlp_surveillance.translate import diseases, countries
-from nlp_surveillance.scraper import text_extractor, who_scraper, promed_scraper
+from nlp_surveillance.event_db_preprocessing import event_db, translate_diseases, translate_countries
+from nlp_surveillance.scraper._country_lookup import abbreviate_wikipedia_country_df, to_translation_dict
+from nlp_surveillance.scraper._clean_wikipedia_table import clean_wikipedia_country_df
+from nlp_surveillance.scraper._rki_abbreviations import get_rki_abbreviations
+from nlp_surveillance.scraper._disease_lookup import merge_disease_lookup_as_dict
+from nlp_surveillance.scraper import text_extractor, who_scraper, promed_scraper, wikidata_diseases, wikipedia_countries
 from nlp_surveillance.classifier import extract_sentence, naive_bayes, summarize
 
 

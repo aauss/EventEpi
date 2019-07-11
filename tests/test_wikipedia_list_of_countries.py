@@ -1,8 +1,8 @@
 import pandas as pd
 
 from nlp_surveillance.pipeline import ScrapeCountryNamesFromWikipedia
-from nlp_surveillance.wikipedia_list_of_countries.clean import clean_wikipedia_country_df
-from nlp_surveillance.wikipedia_list_of_countries.lookup import abbreviate_wikipedia_country_df
+from nlp_surveillance.scraper._clean_wikipedia_table import clean_wikipedia_country_df
+from nlp_surveillance.scraper._country_lookup import abbreviate_wikipedia_country_df
 
 
 def test_scrape_country_names_from_wikipedia():
