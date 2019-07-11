@@ -1,12 +1,18 @@
+import os
+
 import pandas as pd
 
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 
-def disease_name_query() -> pd.DataFrame:
+def disease_name_query(proxy: dict = None) -> pd.DataFrame:
     """Queries English and German disease names form Wikidata
 
-    Returns: Lookup of English and German disease names as DataFrame
+    Args:
+        proxy (dict, optional): A dict for proxy values. E.g. {'http_proxy': '<YOUR_PROXY>'}
+
+    Returns (pd.DataFrame):
+        Lookup of English and German disease names as DataFrame
 
     """
     endpoint_url = "https://query.wikidata.org/sparql"
@@ -18,11 +24,14 @@ def disease_name_query() -> pd.DataFrame:
                     ?item rdfs:label ?itemLabel_EN.
                     FILTER (lang(?itemLabel_EN) = "en").
                     }"""
-    disease_translation_df = _get_results_sparql(endpoint_url, query)
+    disease_translation_df = _get_results_sparql(endpoint_url, query, proxy)
     return disease_translation_df
 
 
-def _get_results_sparql(endpoint_url, query):
+def _get_results_sparql(endpoint_url, query, proxy: dict = None):
+    if proxy:
+        for key, value in proxy.items():
+            os.environ[key] = value
     sparql = SPARQLWrapper(endpoint_url)
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
