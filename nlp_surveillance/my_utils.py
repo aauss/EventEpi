@@ -36,6 +36,17 @@ def flatten_list(to_flatten):
     return [item for sublist in to_flatten for item in sublist]
 
 
+def assure_right_proxy_settings():
+    if not connection_is_possible():
+        urllib_proxy = {}
+        proxy = load_rki_header_and_proxy_dict()["proxy"]
+        for proxy_type, proxy in proxy.items():
+            urllib_proxy[proxy_type.replace("_proxy", "")] = proxy
+            proxy_support = urllib.request.ProxyHandler(urllib_proxy)
+            opener = urllib.request.build_opener(proxy_support)
+            urllib.request.install_opener(opener)
+
+
 def load_rki_header_and_proxy_dict():
     # TODO: when proxy is needed again, store this pickle in data/rki
 
