@@ -98,7 +98,8 @@ def test_clean_diseases():
 
 def test_clean_urls():
     example_urls_to_clean = pd.DataFrame({'URL_1': ['<http://apps.who.int/iris/10665/1/OEW10.pdf>',
-                                                    ' http://www.promedmail.org/post/4, http://www.promedmail.org/post/5 ',
+                                                    ' http://www.promedmail.org/direct.php?id=20180426.5770330, '
+                                                    'http://www.promedmail.org/post/5835487',
                                                     'mail'],
                                           'URL_2': ['http://www.google.com', None, None],
                                           "disease": ["ebola virus", "q virus", "common cold"]
@@ -108,8 +109,8 @@ def test_clean_urls():
     expected_clean_urls = pd.DataFrame({"disease": ["ebola virus", "ebola virus", "q virus", "q virus", "common cold"],
                                         'URL': ['http://apps.who.int/iris/10665/1/OEW10.pdf',
                                                 'http://www.google.com',
-                                                'https://www.promedmail.org/post/4',
-                                                'https://www.promedmail.org/post/5',
+                                                'https://www.promedmail.org/post/5770330',
+                                                'https://www.promedmail.org/post/5835487',
                                                 None],
                                         }
                                        )

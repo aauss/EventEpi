@@ -18,7 +18,7 @@ def clean_urls(event_db):
     event_db = _combine_url_columns_row_wise_with_comma(event_db)
     event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL')
     event_db['URL'] = event_db['URL'].str.strip()
-    event_db['URL'] = event_db['URL'].apply(_remove_guillemets).apply(_only_keep_valid_urls).apply(_clean_promed_urls)
+    event_db['URL'] = event_db['URL'].apply(_remove_guillemets).apply(_only_keep_valid_urls).apply(_normalize_promed_urls)
     return event_db
 
 
@@ -53,16 +53,13 @@ def _only_keep_valid_urls(url):
         return None
 
 
-def _clean_promed_urls(url):
+def _normalize_promed_urls(url):
     # Necessary since there are many URL writings for the same article
     if (url is not None) and 'promedmail' in url:
-        url = url.replace('http:', 'https:')
-        no_www_in_url = re.match(r'(https://)(promedmail.org/post/.*)', url)
-        if no_www_in_url:
-            url = no_www_in_url[1] + 'www.' + no_www_in_url[2]
-        url_without_non_id_number = re.sub(r'(https://www.promedmail.org/post/)\d+\.(\d+)', r'\1\2', url)
-        if 'direct.php?' in url:
-            url_without_non_id_number = re.sub(r'(https://www.promedmail.org/)direct\.php\?id=\d+\.(\d+)', r'\1\2', url)
-        return url_without_non_id_number
-    else:
-        return url
+        match = re.search(r"(\d{7})", url[::-1])
+        try:
+            article_id = match[1]
+            url = f"https://www.promedmail.org/post/{article_id[::-1]}"
+        except TypeError:
+            pass
+    return url
