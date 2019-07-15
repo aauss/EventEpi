@@ -14,6 +14,7 @@ from nlp_surveillance.scraper._rki_abbreviations import get_rki_abbreviations
 from nlp_surveillance.scraper._disease_lookup import merge_disease_lookup_as_dict
 from nlp_surveillance.scraper import text_extractor, who_scraper, promed_scraper, wikidata_diseases, wikipedia_countries
 from nlp_surveillance.classifier import extract_sentence, naive_bayes, summarize
+from nlp_surveillance import my_utils
 
 
 class LuigiTaskWithDataOutput(luigi.Task):
@@ -74,7 +75,8 @@ class RequestDiseaseNamesFromWikiData(LuigiTaskWithDataOutput):
         German.
 
         """
-        disease_lookup = wikidata.disease_name_query()
+
+        disease_lookup = wikidata_diseases.disease_name_query(proxy)
         with self.output().open('w') as handler:
             pickle.dump(disease_lookup, handler)
 
@@ -97,7 +99,8 @@ class ScrapeCountryNamesFromWikipedia(LuigiTaskWithDataOutput):
         German.
 
         """
-        country_lookup = wikipedia.scrape_wikipedia_countries()
+
+        country_lookup = wikipedia_countries.scrape_wikipedia_countries(proxy=proxy)
         with self.output().open('w') as handler:
             pickle.dump(country_lookup, handler)
 
@@ -189,7 +192,9 @@ class ScrapePromed(LuigiTaskWithDataOutput):
                                  format=luigi.format.Nop)
 
     def run(self):
-        promed_urls = promed_scraper.scrape(self.year_to_scrape)
+        """Scrapes ProMED Mail articles given time range
+        """
+        promed_urls = promed_scraper.scrape(self.year_to_scrape, proxy=proxy)
         with self.output().open('w') as handler:
             pickle.dump(promed_urls, handler)
 
@@ -207,8 +212,9 @@ class ScrapeWHO(LuigiTaskWithDataOutput):
                                  format=luigi.format.Nop)
 
     def run(self):
-        print(self.year_to_scrape)
-        who_urls = who_scraper.scrape(self.year_to_scrape)
+        """Scrapes WHO DONs given time range
+        """
+        who_urls = who_scraper.scrape(self.year_to_scrape, proxy=proxy)
         with self.output().open('w') as handler:
             pickle.dump(who_urls, handler)
 
@@ -239,8 +245,11 @@ class ScrapeFromURLsAndExtractText(LuigiTaskWithDataOutput):
         with self.input().open('r') as handler:
             df_to_extract_from = pickle.load(handler)
         df_to_extract_from = df_to_extract_from[df_to_extract_from["URL"].notna()]
+        tqdm.pandas()
         df_to_extract_from['extracted_text'] = (df_to_extract_from["URL"]
-                                                .apply(text_extractor.extract_cleaned_text_from_url))
+                                                .progress_apply(
+            lambda x: text_extractor.extract_cleaned_text_from_url(x, proxy=proxy))
+                                                )
         with self.output().open('w') as handler:
             pickle.dump(df_to_extract_from, handler)
 
@@ -372,14 +381,20 @@ class RecommenderTierAnnotation(LuigiTaskWithDataOutput):
             pickle.dump(entities_and_label_unpacked, handler)
 
 
-def format_path(path_string):
+def format_path(path_string: str) -> str:
     return os.path.abspath(os.path.join(os.path.dirname(__file__), path_string))
 
 
 if __name__ == '__main__':
+    global proxy
+    if not my_utils.connection_is_possible():
+        my_utils.assure_right_proxy_settings()
+        headers = my_utils.load_rki_header_and_proxy_dict()['headers']
+        proxy = my_utils.load_rki_header_and_proxy_dict()['proxy']
+        proxy = dict(zip(["http", "https"], proxy.values()))
     # luigi.build([TrainNaiveBayes('dates')], local_scheduler=True)
     # luigi.build([AnnotateDoc('event_db')], local_scheduler=True)
     # luigi.build([ExtractSentencesAndLabel('dates')], local_scheduler=True)
-    # luigi.build([ScrapeFromURLsAndExtractText('event_db')], local_scheduler=True)
+    luigi.build([ScrapeFromURLsAndExtractText('event_db')], local_scheduler=True)
     # luigi.build([AnnotateDoc('who'), AnnotateDoc('promed')], local_scheduler=True)
-    luigi.build([RecommenderTierAnnotation()], local_scheduler=True)
+    # luigi.build([RecommenderTierAnnotation()], local_scheduler=True)

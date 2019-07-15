@@ -1,9 +1,9 @@
 import requests
 import re
 import pandas as pd
+
 from functools import partial
 from tqdm import tqdm_notebook as tqdm
-
 
 from nlp_surveillance.scraper.text_extractor import get_html_from_promed_url
 
@@ -18,10 +18,13 @@ def scrape(from_date: str, to_date: str, proxy=None) -> pd.DataFrame:
     return urls
 
 
-def _get_article_ids_per_year(from_date='01/01/2018', to_date='12/31/2018', proxy=None) -> list:
-    # date in the format mm/dd/YYYY
-    # adjust from_date to valid smallest date
-    from_date = _correct_to_earliest_allowed_date(from_date)
+def _correct_to_earliest_allowed_date(from_date: str) -> str:
+    corrected_date = max(pd.Timestamp(day=int(from_date[3:5]), month=int(from_date[0:2]), year=int(from_date[6:11])),
+                         pd.Timestamp(day=20, month=8, year=1994))
+    return corrected_date.strftime('%m/%d/%Y')
+
+
+def _get_article_ids_per_year(from_date, to_date, proxy=None) -> list:
     get_content_of_search_page = partial(_get_content_of_search_page,
                                          from_date=from_date,
                                          to_date=to_date,
@@ -45,12 +48,6 @@ def _get_article_ids_per_year(from_date='01/01/2018', to_date='12/31/2018', prox
         last_id_before_error = ids[-1]
         ids.extend(_recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error, from_date))
     return ids
-
-
-def _correct_to_earliest_allowed_date(from_date: str) -> str:
-    corrected_date = max(pd.Timestamp(day=int(from_date[3:5]), month=int(from_date[0:2]), year=int(from_date[6:11])),
-                         pd.Timestamp(day=20, month=8, year=1994))
-    return corrected_date.strftime('%m/%d/%Y')
 
 
 def _get_content_of_search_page(from_date: str, to_date: str, page_num: int, proxy: dict) -> str:
