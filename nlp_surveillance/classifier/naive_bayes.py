@@ -1,3 +1,5 @@
+import re
+
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -33,9 +35,16 @@ def _get_classifier():
 
 
 def _prepare_data(df):
-    sentences = df.sentence.apply(remove_stop_words)
-    X_train, X_test, y_train, y_test = train_test_split(sentences, df.label,
-                                                        random_state=42)
+    sentences_without_bad_tokenization = df["sentence"].apply(lambda x:
+                                                              re.sub(r"([0-9a-zA-Z]+)\.([A-Za-z]+\s)",
+                                                                     r"\g<1>. \g<2>",
+                                                                     x)
+                                                              )
+    X_train, X_test, y_train, y_test = train_test_split(sentences_without_bad_tokenization,
+                                                        df["label"],
+                                                        random_state=42,
+                                                        stratify=df["label"],
+                                                        )
     return X_train, X_test, y_train, y_test
 
 
