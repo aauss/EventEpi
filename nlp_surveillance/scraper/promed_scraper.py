@@ -46,7 +46,9 @@ def _get_article_ids_per_year(from_date, to_date, proxy=None) -> list:
             break
     if ids and int(max_page_num) > 199:
         last_id_before_error = ids[-1]
-        ids.extend(_recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error, from_date))
+        ids.extend(_recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error,
+                                                                           from_date,
+                                                                           proxy))
     return ids
 
 
@@ -62,9 +64,14 @@ def _get_content_of_search_page(from_date: str, to_date: str, page_num: int, pro
             )
 
 
-def _recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error, from_date: str):
-    html = get_html_from_promed_url(last_id_before_error)
+def _recursively_call_with_last_scraped_date_as_new_to_date(last_id_before_error: str,
+                                                            from_date: str,
+                                                            proxy: dict):
+    html = get_html_from_promed_url(last_id_before_error, proxy=proxy)
+
     published_date = re.search(r'Published Date:.* (\d\d\d\d-\d\d-\d\d)', html)[1]
     last_date_as_mm_dd_yyyy = f'{published_date[5:7]}/{published_date[8:10]}/{published_date[0:4]}'
-    return _get_article_ids_per_year(from_date=from_date, to_date=last_date_as_mm_dd_yyyy)
+    return _get_article_ids_per_year(from_date=from_date,
+                                     to_date=last_date_as_mm_dd_yyyy,
+                                     proxy=proxy)
 
