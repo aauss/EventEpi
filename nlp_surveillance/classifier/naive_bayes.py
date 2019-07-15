@@ -3,13 +3,13 @@ import re
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn import metrics
+from imblearn.metrics import classification_report_imbalanced
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
 
 
 def learn(df):
@@ -17,19 +17,30 @@ def learn(df):
     sentences_train, sentences_test, label_train, label_test = _prepare_data(df)
     text_clf.fit(sentences_train, label_train, clf__sample_weight=_balance_labels(label_train))
 
+    """
+    text_clf = _get_classifier(classifier_type)
+    sentences_train, sentences_test, label_train, label_test = _prepare_data(df)
+    text_clf.fit(sentences_train,
+                 label_train,
+                 clf__sample_weight=_balance_labels(label_train))
     predicted = text_clf.predict(sentences_test)
     classification_report, confusion_matrix = _evaluate(predicted, label_test)
     return text_clf, classification_report, confusion_matrix
 
 
-def _get_classifier():
+def _get_classifier(classifier_type):
+    if classifier_type == "multi":
+        clf = MultinomialNB()
+    else:
+        clf = BernoulliNB()
     text_clf = Pipeline([
-        ('vect', CountVectorizer()),
+        ('vect', CountVectorizer(stop_words="english",
+                                 tokenizer=word_tokenize)),
         ('tfidf', TfidfTransformer()),
-        ('clf', MultinomialNB())])
-    parameters = {'vect__ngram_range': [(1, 1), (1, 2)],
+        ('clf', clf)])
+    parameters = {'vect__ngram_range': [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5)],
                   'tfidf__use_idf': (True, False),
-                  'clf__alpha': (1e-2, 1e-3)}
+                  'clf__alpha': (1, 0.5, 0.1, 1e-2, 1e-3)}
     gs_clf = GridSearchCV(text_clf, parameters, iid=False, cv=4)
     return gs_clf
 
@@ -54,14 +65,6 @@ def _balance_labels(label):
 
 
 def _evaluate(predicted, label_test):
-    classification_report = metrics.classification_report(label_test, predicted)
+    classification_report = classification_report_imbalanced(label_test, predicted)
     confusion_matrix = metrics.confusion_matrix(label_test, predicted)
     return classification_report, confusion_matrix
-
-
-def remove_stop_words(text):
-    stopwords_to_remove = set(stopwords.words('english'))
-    words_to_process = set(word_tokenize(text))
-    text_without_stopwords = words_to_process - stopwords_to_remove
-    text_without_stopwords = ' '.join(text_without_stopwords)
-    return text_without_stopwords
