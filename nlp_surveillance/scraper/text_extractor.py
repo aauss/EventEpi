@@ -12,8 +12,15 @@ from urllib.error import URLError
 from socket import timeout
 
 
+def extract_cleaned_text_from_url(url: str, proxy: dict) -> Union[str, None]:
+    """Extracts the main text from an URL using boilerpipe if its an HTML and tika if it is an PDF
+
+    Args:
+        url: An url to extract text from
+        proxy: Proxy settings for requests
+
     Returns:
-        Extracted text as string or None
+        Extracted text
     """
 
     if 'pdf' in url:
@@ -33,7 +40,6 @@ from socket import timeout
 
 
 def _extract_cleaned_text_from_pdf(url):
-    # Extract text from pdf and also remove unrecognized symbols
     try:
         log = logging.getLogger('tika.tika')
         log.disabled = True
@@ -45,7 +51,7 @@ def _extract_cleaned_text_from_pdf(url):
     return text
 
 
-def get_html_from_promed_url(url, proxy):
+def get_html_from_promed_url(url: str, proxy: dict = None):
     try:
         id_ = re.search(r'(\d+)', url)[0]
         url = f'http://www.promedmail.org/ajax/getPost.php?alert_id={id_}'

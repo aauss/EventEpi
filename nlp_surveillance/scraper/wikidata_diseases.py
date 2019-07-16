@@ -11,7 +11,7 @@ def disease_name_query(proxy: dict = None) -> pd.DataFrame:
     Args:
         proxy (dict, optional): A dict for proxy values. E.g. {'http_proxy': '<YOUR_PROXY>'}
 
-    Returns (pd.DataFrame):
+    Returns:
         Lookup of English and German disease names as DataFrame
 
     """

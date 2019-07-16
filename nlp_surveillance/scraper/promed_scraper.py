@@ -3,13 +3,36 @@ import re
 import pandas as pd
 
 from functools import partial
+from typing import Union, Tuple
 from tqdm import tqdm_notebook as tqdm
 
 from nlp_surveillance.scraper.text_extractor import get_html_from_promed_url
 
 
-def scrape(from_date: str, to_date: str, proxy=None) -> pd.DataFrame:
-    # Date in the form mm/dd/YYYY
+def scrape(year_range: Union[Tuple[int, int], int] = None,
+           date_range: Tuple[str, str] = None,
+           proxy=None) -> pd.DataFrame:
+    """Scrapes ProMED Mail articles given a time range
+
+    Args:
+        year_range (optional): Years to scrape as int. Either one year or year range given tuple of two ints
+        date_range (optional): Date range for scraping. Tuple contains from- and to-date as string (mm/dd/YYYY)
+        proxy (optional): A dict for proxy values. E.g. {'http_proxy': '<YOUR_PROXY>'}
+
+    Returns:
+        DataFrame with all ProMED Mail URLs for the given year/date range
+    """
+
+    if isinstance(year_range, int):
+        from_date = f"01/01/{year_range}"
+        to_date = f"12/31/{year_range}"
+    elif isinstance(year_range, tuple):
+        from_date = f"01/01/{year_range[0]}"
+        to_date = f"12/31/{year_range[1]}"
+    else:
+        from_date = date_range[0]
+        to_date = date_range[1]
+    from_date = _correct_to_earliest_allowed_date(from_date)
     ids = _get_article_ids_per_year(from_date=from_date,
                                     to_date=to_date,
                                     proxy=proxy)
@@ -42,7 +65,7 @@ def _get_article_ids_per_year(from_date, to_date, proxy=None) -> list:
         if ids_of_pages:
             ids.extend(ids_of_pages)
         else:
-            # After around 200 pages, promed is returning an error message instead of the next page of URLs
+            # After around 200 pages, ProMED is returning an error message instead of the next page of URLs
             break
     if ids and int(max_page_num) > 199:
         last_id_before_error = ids[-1]

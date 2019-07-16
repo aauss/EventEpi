@@ -1,4 +1,5 @@
 from didyoumean import didyoumean
+from tqdm import tqdm
 
 
 def translate(event_db, disease_lookup):
@@ -14,8 +15,10 @@ def translate(event_db, disease_lookup):
         The incident database where all disease names transferred to a controlled vocabulary
 
     """
+
+    tqdm.pandas()
     event_db["disease_edb"] = (event_db["disease_edb"][event_db["disease_edb"].notna()]
-                               .apply(lambda x: _translate_disease(x, disease_lookup)))
+                               .progress_apply(lambda x: _translate_disease(x, disease_lookup)))
     return event_db
 
 

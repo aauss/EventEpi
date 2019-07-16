@@ -1,4 +1,5 @@
 from didyoumean import didyoumean
+from tqdm import tqdm
 
 
 def translate(event_db, country_lookup):
@@ -14,8 +15,10 @@ def translate(event_db, country_lookup):
         The incident database where all country names transferred to a controlled vocabulary
 
     """
+
+    tqdm.pandas()
     event_db["country_edb"] = (event_db["country_edb"][event_db["country_edb"].notna()]
-                               .apply(lambda x: _translate_country(x, country_lookup)))
+                               .progress_apply(lambda x: _translate_country(x, country_lookup)))
     return event_db
 
 

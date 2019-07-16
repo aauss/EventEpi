@@ -6,7 +6,7 @@ def get_rki_abbreviations() -> pd.DataFrame:
     """Load RKI internal disease abbreviations
 
     Returns:
-        pd.DataFrame: Disease names and abbreviations
+        Disease names and abbreviations
     """
     dirname = os.path.dirname(__file__)
     path = os.path.join(dirname, '..', '..', 'data', 'rki', 'disease_codes.csv')

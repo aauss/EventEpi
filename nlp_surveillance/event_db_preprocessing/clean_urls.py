@@ -10,7 +10,7 @@ def clean_urls(event_db):
     URL columns, the row is repeated with the same values except for the URL. Also, the function
     removes formatting errors that were found during exploration of incident database
     Args:
-        event_db (pd.DataFrame): Incident database with formatting errors and seperate URL columns
+        event_db (pd.DataFrame): Incident database with formatting errors and separate URL columns
 
     Returns (pd.DataFrame): Incident database without formatting errors and merged URL columns
 
@@ -18,14 +18,17 @@ def clean_urls(event_db):
     event_db = _combine_url_columns_row_wise_with_comma(event_db)
     event_db = my_utils.split_strings_at_comma_and_distribute_to_new_rows(event_db, 'URL')
     event_db['URL'] = event_db['URL'].str.strip()
-    event_db['URL'] = event_db['URL'].apply(_remove_guillemets).apply(_only_keep_valid_urls).apply(_normalize_promed_urls)
+    event_db['URL'] = (event_db['URL']
+                       .apply(_remove_guillemets)
+                       .apply(_only_keep_valid_urls)
+                       .apply(_normalize_promed_urls))
     return event_db
 
 
 def _combine_url_columns_row_wise_with_comma(event_db):
     url_columns = list(filter(lambda x: 'url' in x.lower(), event_db.columns))
     event_db['URL'] = event_db[url_columns].apply(_combine_columns_without_nones, axis=1)  # Actually combine
-    event_db['URL'] = event_db.URL.apply(lambda x: ','.join(x))
+    event_db['URL'] = event_db["URL"].apply(lambda x: ','.join(x))
     event_db = event_db.drop(columns=url_columns)
     return event_db
 

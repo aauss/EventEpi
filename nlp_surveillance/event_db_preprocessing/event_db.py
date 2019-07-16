@@ -9,14 +9,14 @@ from .clean_diseases import clean_diseases
 from .clean_urls import clean_urls
 
 
-def read_cleaned(path=None) -> pd.DataFrame:
+def read_cleaned(path: str = None) -> pd.DataFrame:
     """A method to apply all preprocessing steps for the incident database
 
     Args:
-        path (str): Path of unprocessed incident database
+        path: Path of unprocessed incident database
 
     Returns:
-        pd.DataFrame:
+        Cleaned/preprocessed incident database
     """
     event_db = _read_unprocessed(path=path)
     preprocessed_event_db = (event_db
