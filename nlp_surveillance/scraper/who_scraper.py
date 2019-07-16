@@ -1,11 +1,9 @@
 import requests
-import urllib.request
 import pandas as pd
 from bs4 import BeautifulSoup
 from itertools import product
 from operator import itemgetter
 
-from nlp_surveillance import my_utils
 
 
 def scrape(list_of_years=None, months=None, headers=None, proxy=None):
@@ -14,12 +12,8 @@ def scrape(list_of_years=None, months=None, headers=None, proxy=None):
     if list_of_years and not isinstance(list_of_years, list):
         list_of_years = [list_of_years]
 
-    if not _connection_is_possible() and proxy is not None:
-        headers = my_utils.load_rki_header_and_proxy_dict()['headers']
-        proxy = my_utils.load_rki_header_and_proxy_dict()['proxy']
-
-    list_of_years = _get_links_by_year(list_of_years=list_of_years, proxy=proxy, headers=headers)
-    all_links = _get_links_per_year(list_of_years, list_of_months=months, proxy=proxy, headers=headers)
+    list_of_years = _get_urls_to_archives_per_year(list_of_years=list_of_years, proxy=proxy, headers=headers)
+    all_links = _get_article_urls_per_years(list_of_years, list_of_months=months, proxy=proxy, headers=headers)
     urls = pd.DataFrame({'URL': all_links})
     return urls
 
@@ -62,13 +56,5 @@ def _get_links_per_year(years_links, list_of_months=None, proxy=None, headers=No
     return all_links
 
 
-def _connection_is_possible():
-    try:
-        urllib.request.urlopen('https://www.rki.de/DE/Home/homepage_node.html', timeout=4)
-        return True
-    except urllib.request.URLError:
-        return False
-
-
-def get_date(url):
+def _get_year_in_url(url):
     return ''.join(list(filter(str.isdigit, url)))

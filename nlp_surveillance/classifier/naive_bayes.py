@@ -1,4 +1,5 @@
 import re
+import os
 
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
@@ -12,12 +13,21 @@ from imblearn.metrics import classification_report_imbalanced
 from nltk.tokenize import word_tokenize
 
 
-def learn(df):
-    text_clf = _get_classifier()
-    sentences_train, sentences_test, label_train, label_test = _prepare_data(df)
-    text_clf.fit(sentences_train, label_train, clf__sample_weight=_balance_labels(label_train))
+def train(df, classifier_type):
+    """Trains a naive Bayes classifier to classify sentences that contain a relevant date/count
+    entity
+
+    Args:
+        df (pd.DataFrame): A DataFrame that contains sentences with an date/count entity and their labels, i.e.,
+        whether they are the key entity (most important entity)
+        classifier_type (str): The type of naive Bayes classifier to train. Either "multi" for multinomial or
+        "bernoulli" for Bernoulli naive Bayes classifier
+
+    Returns(sklearn.naive_bayes, str, str): Returns a tuple that contains the classifier, an classification report
+    and a confusion matrix
 
     """
+
     text_clf = _get_classifier(classifier_type)
     sentences_train, sentences_test, label_train, label_test = _prepare_data(df)
     text_clf.fit(sentences_train,
@@ -41,7 +51,7 @@ def _get_classifier(classifier_type):
     parameters = {'vect__ngram_range': [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5)],
                   'tfidf__use_idf': (True, False),
                   'clf__alpha': (1, 0.5, 0.1, 1e-2, 1e-3)}
-    gs_clf = GridSearchCV(text_clf, parameters, iid=False, cv=4)
+    gs_clf = GridSearchCV(text_clf, parameters, iid=False, cv=4, n_jobs=(os.cpu_count()//2))
     return gs_clf
 
 
