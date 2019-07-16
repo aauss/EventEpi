@@ -1,6 +1,8 @@
 import pickle
 import os
 import urllib.request
+import requests
+import socket
 
 import pandas as pd
 import numpy as np
@@ -40,6 +42,7 @@ def assure_right_proxy_settings():
     if not connection_is_possible():
         urllib_proxy = {}
         proxy = load_rki_header_and_proxy_dict()["proxy"]
+        proxy = dict(zip(["http", "https"], proxy.values()))
         for proxy_type, proxy in proxy.items():
             urllib_proxy[proxy_type.replace("_proxy", "")] = proxy
             proxy_support = urllib.request.ProxyHandler(urllib_proxy)
@@ -56,8 +59,11 @@ def load_rki_header_and_proxy_dict():
 def connection_is_possible():
     try:
         urllib.request.urlopen('https://www.rki.de/DE/Home/homepage_node.html', timeout=4)
+        requests.get('https://www.rki.de/DE/Home/homepage_node.html')
         return True
-    except urllib.request.URLError:
+    except (urllib.request.URLError,
+            requests.exceptions.ConnectionError,
+            socket.error):
         return False
 
 
