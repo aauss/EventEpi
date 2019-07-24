@@ -332,8 +332,8 @@ class ExtractSentencesAndLabel(LuigiTaskWithDataOutput):
 
 
 class TrainNaiveBayes(LuigiTaskWithDataOutput):
-    to_learn: str = luigi.Parameter()
-    classifier_type: str = luigi.Parameter()
+    to_learn: str = luigi.Parameter()  # "dates" or "counts"
+    classifier_type: str = luigi.Parameter()  # "multi" or "bernoulli"
 
     def requires(self):
         """Makes dependency in Luigi pipeline for ExtractSentencesAndLabel
@@ -349,8 +349,9 @@ class TrainNaiveBayes(LuigiTaskWithDataOutput):
         Returns:
             luigi.LocalTarget path object
         """
-        return luigi.LocalTarget(format_path(f'../data/classifier/{self.to_learn}_naive_bayes_clf.pkl'),
-                                 format=luigi.format.Nop)
+        return luigi.LocalTarget(
+            format_path(f'../data/classifier/{self.to_learn}_{self.classifier_type}naive_bayes_clf.pkl'),
+            format=luigi.format.Nop)
 
     def run(self):
         """Trains a naive Bayes classifier on sentences containing to_learn={count, dates} entities
@@ -469,5 +470,5 @@ if __name__ == '__main__':
         proxy = dict(zip(["http", "https"], proxy.values()))
     # luigi.build([TrainNaiveBayes('dates')], local_scheduler=True)
     # luigi.build([ExtractSentencesAndLabel('dates')], local_scheduler=True)
-    luigi.build([RecommenderLabeling()], local_scheduler=True)
+    luigi.build([TrainNaiveBayes('dates', 'bernoulli')], local_scheduler=True)
     # luigi.build([RecommenderTierAnnotation()], local_scheduler=True)

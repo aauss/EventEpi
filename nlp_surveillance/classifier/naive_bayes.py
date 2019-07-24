@@ -20,8 +20,7 @@ def train(df, classifier_type):
     Args:
         df (pd.DataFrame): A DataFrame that contains sentences with an date/count entity and their labels, i.e.,
         whether they are the key entity (most important entity)
-        classifier_type (str): The type of naive Bayes classifier to train. Either "multi" for multinomial or
-        "bernoulli" for Bernoulli naive Bayes classifier
+        classifier_type (str):  "multi" for multinomial or "bernoulli" for Bernoulli naive Bayes classifier
 
     Returns(sklearn.naive_bayes, str, str): Returns a tuple that contains the classifier, an classification report
     and a confusion matrix
