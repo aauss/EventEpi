@@ -1,9 +1,24 @@
 from didyoumean import didyoumean
+from tqdm import tqdm
 
 
 def translate(event_db, disease_lookup):
-    event_db.disease_edb = (event_db.disease_edb[event_db.disease_edb.notna()]
-                            .apply(lambda x: _translate_disease(x, disease_lookup)))
+    """Translates disease names in incident database using the disease_lookup
+
+    disease_lookup contains translations from different forms of abbreviations and German disease names to
+    a controlled English vocabulary that matches EpiTator output
+    Args:
+        event_db (pd.DataFrame): The incident database
+        disease_lookup (dict): Dictionary to translate German disease names to controlled vocabulary
+
+    Returns (pd.DataFrame):
+        The incident database where all disease names transferred to a controlled vocabulary
+
+    """
+
+    tqdm.pandas()
+    event_db["disease_edb"] = (event_db["disease_edb"][event_db["disease_edb"].notna()]
+                               .progress_apply(lambda x: _translate_disease(x, disease_lookup)))
     return event_db
 
 

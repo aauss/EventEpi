@@ -2,8 +2,12 @@ import os
 import pandas as pd
 
 
-def get_rki_abbreviations():
-    # TODO: Maybe think about a cleaner function for the German disease names (Röteln, konnatal -> Röteln)
+def get_rki_abbreviations() -> pd.DataFrame:
+    """Load RKI internal disease abbreviations
+
+    Returns:
+        Disease names and abbreviations
+    """
     dirname = os.path.dirname(__file__)
     path = os.path.join(dirname, '..', '..', 'data', 'rki', 'disease_codes.csv')
     disease_code_df = pd.read_csv(path, ';')

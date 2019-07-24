@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # CSV extension
-*.csv 
+*.csv
 
 # Distribution / packaging
 .Python
@@ -123,3 +123,9 @@ dmypy.json
 # Pickle files
 *.p
 *.pkl
+
+# Embeddings
+*.npy
+
+# Plots
+*.pdf

@@ -1,9 +1,24 @@
 from didyoumean import didyoumean
+from tqdm import tqdm
 
 
 def translate(event_db, country_lookup):
-    event_db.country_edb = (event_db.country_edb[event_db.country_edb.notna()]
-                            .apply(lambda x: _translate_country(x, country_lookup)))
+    """Translates country names in incident database using the country_lookup
+
+    country_lookup contains translations from different forms of abbreviations and German country names to
+    a controlled English vocabulary that matches EpiTator output
+    Args:
+        event_db (pd.DataFrame): The incident database
+        country_lookup (dict): Dictionary to translate German country names to controlled vocabulary
+
+    Returns (pd.DataFrame):
+        The incident database where all country names transferred to a controlled vocabulary
+
+    """
+
+    tqdm.pandas()
+    event_db["country_edb"] = (event_db["country_edb"][event_db["country_edb"].notna()]
+                               .progress_apply(lambda x: _translate_country(x, country_lookup)))
     return event_db
 
 

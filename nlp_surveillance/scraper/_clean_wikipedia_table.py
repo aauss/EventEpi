@@ -2,6 +2,14 @@ import re
 
 
 def clean_wikipedia_country_df(wikipedia_country_df):
+    """Apply preprocessing to the scraped Wikipedia list of sovereign states table
+
+    Args:
+        wikipedia_country_df (pd.DataFrame): Unprocessed Wikipedia list of sovereign states table
+
+    Returns:
+        pd.DataFrame: Preprocessed Wikipedia list of sovereign states table
+    """
     wiki_df_without_brackets_and_footnotes = wikipedia_country_df.applymap(_remove_brackets_and_footnotes)
     wiki_df_without_dash = wiki_df_without_brackets_and_footnotes.applymap(_replace_wiki_dash_with_none)
     wiki_df_with_cleaned_state_name_de = _clean_state_name_de(wiki_df_without_dash)
@@ -25,17 +33,19 @@ def _replace_wiki_dash_with_none(string):
 
 
 def _clean_state_name_de(wikipedia_country_df):
-    # Remove additonal information which parts of the country are currently included
-    wikipedia_country_df.state_name_de = wikipedia_country_df.state_name_de.apply(lambda x:
-                                                                                  re.sub(r"((mit)|(ohne)).*", "", x))
+    # Remove additional information about other geographical locations that are included to country name
+    wikipedia_country_df["state_name_de"] = wikipedia_country_df["state_name_de"].apply(lambda x:
+                                                                                        re.sub(r"((mit)|(ohne)).*",
+                                                                                               "",
+                                                                                               x)
+                                                                                        )
     # Remove soft hyphen used in "Zentralafr. Rep".
-    wikipedia_country_df.state_name_de = wikipedia_country_df.state_name_de.str.replace("\xad", "")
+    wikipedia_country_df["state_name_de"] = wikipedia_country_df["state_name_de"].str.replace("\xad", "")
     return wikipedia_country_df
 
 
 def _reorder_words_in_names_with_comma(country_name):
     # Formats such that Congo, Republik of (Brazzaville) --> Republik of Congo
-
     country_name = str(country_name)
     if "," in country_name:
         # If there is a comma, switch order to yield a more common abbreviation: Korea, Nord --> Nord Korea

@@ -3,9 +3,17 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 
-def scrape_wikipedia_countries():
-    """Scrapes German Wikipedia article of list of states of the earth and returns dict with entries."""
-    soup = _get_soup()
+def scrape_wikipedia_countries(proxy=None):
+    """Scrapes Wikipedia article 'Liste der Staaten der Erde' (list of sovereign states) to create country name lookup
+
+    Args:
+        proxy (dict, optional): A dict for proxy values. E.g. {'http_proxy': '<YOUR_PROXY>'}
+
+    Returns (pd.DataFrame):
+        DataFrame of full and short state name in German and English and ISO abbreviations.
+
+    """
+    soup = _get_soup(proxy=proxy)
     wiki_dict = {"state_name_de": [],
                  "full_state_name_de": [],
                  "translation_state_name": [],
@@ -32,8 +40,8 @@ def scrape_wikipedia_countries():
     return wiki_df
 
 
-def _get_soup():
-    req = requests.get("https://de.wikipedia.org/wiki/Liste_der_Staaten_der_Erde")
+def _get_soup(proxy=None):
+    req = requests.get("https://de.wikipedia.org/wiki/Liste_der_Staaten_der_Erde", proxy)
     soup = BeautifulSoup(req.content, "html.parser")
 
     # Find table with of all countries
