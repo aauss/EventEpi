@@ -1,8 +1,8 @@
 import pandas as pd
 
-from nlp_surveillance.event_db_preprocessing import translate_diseases, translate_countries
-from nlp_surveillance.event_db_preprocessing.clean_diseases import clean_diseases
-from nlp_surveillance.pipeline import (MergeDiseaseNameLookupWithAbbreviationsOfRKI,
+from eventepi.event_db_preprocessing import translate_diseases, translate_countries
+from eventepi.event_db_preprocessing.clean_diseases import clean_diseases
+from eventepi.pipeline import (MergeDiseaseNameLookupWithAbbreviationsOfRKI,
                                        CleanCountryLookUpAndAddAbbreviations)
 
 

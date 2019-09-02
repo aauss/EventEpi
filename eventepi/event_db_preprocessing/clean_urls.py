@@ -1,6 +1,6 @@
 import re
 
-from nlp_surveillance import my_utils
+from eventepi import my_utils
 
 
 def clean_urls(event_db):

@@ -27,7 +27,7 @@ Has the goal to translate German country and disease names to be comparable to [
 You can use the WHO and ProMed scraper like so which returns a list of articles. Look into the documentation for more options.
 
 ```python
-from nlp_surveillance.scraper import promed_scraper, who_scraper
+from eventepi.scraper import promed_scraper, who_scraper
 
 year_range = (2012, 2018)
 proxy = {"http": "you_http_proxy", "https": "your_https_proxy"}
@@ -40,7 +40,7 @@ who_articles = who_scraper.scrape(list_of_years, proxy=proxy)
 and for the translation of German disease and country names into English we used the following Wikidata and Wikipedia tables:
 
 ```python
-from nlp_surveillance.scraper import wikidata_diseases, wikipedia_countries
+from eventepi.scraper import wikidata_diseases, wikipedia_countries
 
 proxy = {"http_proxy": "you_http_proxy", "https_proxy": "your_https_proxy"}
 
@@ -55,7 +55,7 @@ The classifier are trained using an annotated epidemiological database. One clas
 Also, we learn to determine the relevance of an article using a database. For this, we compared several [classifier](/notebooks/classification.ipynb) using the bag-of-words approach on whole epidemiological articles given a label whether they are interesting or not or on the document embedding.
 Our API looks like this:
 ```python
-from nlp_surveillance.classfier import summarize
+from eventepi.classfier import summarize
 
 article = """As of May 5 there five confirmed cases of Ebola disease virus in the Democratic Republic Congo
 """

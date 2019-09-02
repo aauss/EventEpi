@@ -6,7 +6,7 @@ from functools import partial
 from typing import Union, Tuple
 from tqdm import tqdm_notebook as tqdm
 
-from nlp_surveillance.scraper.text_extractor import get_html_from_promed_url
+from eventepi.scraper.text_extractor import get_html_from_promed_url
 
 
 def scrape(year_range: Union[Tuple[int, int], int] = None,
