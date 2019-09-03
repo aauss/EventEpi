@@ -12,7 +12,7 @@ from urllib.error import URLError
 from socket import timeout
 
 
-def extract_cleaned_text_from_url(url: str, proxy: dict) -> Union[str, None]:
+def extract_cleaned_text_from_url(url: str, proxy: dict = None) -> Union[str, None]:
     """Extracts the main text from an URL using boilerpipe if its an HTML and tika if it is an PDF
 
     Args:
