@@ -1,73 +1,67 @@
 <!DOCTYPE html>
 <html lang='en'>
-  <head>
-    <link rel = "stylesheet"
-   type = "text/css"
-   href = "/css/uikit.min.css" />
-   <link rel="stylesheet"
-   type="text/css"
-   href="/css/datatables.min.css"/>
-    <title>Flask App</title>
-  </head>
-  <body style="margin:0 auto; width:800px">
-     <!-- background="/images/bg.png" > -->
-    <h1 align="center" class="uk-heading-divider">Aussinator</h1>
-    <form  method="post" id="form">
-      <label  for="url">Enter an URL : </label>
-      <input class="uk-input uk-form-width-large" placeholder="Give Aussi some URLs, lool" type="text" id="url" name="url_input" autofocus autocomplete="off">
-      <button class="uk-button uk-button-dark">Summarize</button>
-    </form>
-    <br> </br>
-    <p id="output"></p>
-    <br> </br>
-    <table id="example" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th>Disease</th>
-                <th>Country</th>
-                <th>Confirmed Cases</th>
-                <th>Date Of Case Count</th>
-                <th>Relevance</th>
-                <th>Input Date</th>
-                <th>Source</th>
-            </tr>
-        </thead>
-        <tfoot>
-            <tr>
-              <th>Disease</th>
-              <th>Country</th>
-              <th>Confirmed Cases</th>
-              <th>Date Of Case Count</th>
-              <th>Relevance</th>
-                <th>Input Date </th>
-                <th>Source</th>
-            </tr>
-        </tfoot>
-    </table>
+<head>
+    <link rel="stylesheet"
+          type="text/css"
+          href="/css/uikit.min.css"/>
+    <link rel="stylesheet"
+          type="text/css"
+          href="/css/datatables.min.css"/>
+    <link rel="stylesheet"
+          type="text/css"
+          href="/css/styles.css"/>
+    <title>EventEpi</title>
+</head>
+<body style="margin:0 auto; width:75%">
+<h1 align="center" class="uk-heading-divider">EventEpi</h1>
+<form method="post" id="form">
+    <label for="url">Enter an URL : </label>
+    <input class="uk-input uk-form-width-large" type="text" id="url" name="url_input" autofocus autocomplete="off">
+    <button class="uk-button uk-button-dark">Summarize</button>
+</form>
+<br> </br>
+<p id="output"></p>
+<br> </br>
+<table id="example" class="display" style="width:100%">
+    <thead>
+    <tr>
+        <th>Disease</th>
+        <th>Country</th>
+        <th>Confirmed Cases</th>
+        <th>Date Of Case Count</th>
+        <th>Relevance</th>
+        <th>Input Date</th>
+        <th>Source</th>
+    </tr>
+    </thead>
+</table>
 
-    <script type="text/javascript"
-    src="/js/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript"
-    src="/js/datatables.min.js"></script>
-    <script src="/js/uikit.min.js"></script>
+<script type="text/javascript"
+        src="/js/jquery-3.2.1.min.js"></script>
+<script type="text/javascript"
+        src="/js/datatables.min.js"></script>
+<script src="/js/uikit.min.js"></script>
 
-     <script>
+<script>
 
-
-
-
-    var table  = $('#example').DataTable( {
+    var table = $('#example').DataTable({
+        columnDefs: [
+            {
+                targets: [2, 4],
+                className: 'text-right'
+            }
+        ],
         "ajax": '/js/table.json',
         "columns": [
-            { "data": "disease" },
-            { "data": "country" },
-            { "data": "confirmed" },
-            { "data": "date" },
-            { "data": "relevance" },
-            { "data": "input_date" },
+            {"data": "disease"},
+            {"data": "country"},
+            {"data": "confirmed"},
+            {"data": "date"},
+            {"data": "relevance"},
+            {"data": "input_date"},
             {
                 "data": "url",
-                "render": function (data, type, row, meta) {
+                "render": function (data, type) {
                     if (type === 'display') {
                         data = '<a href="' + data + '">' + data + '</a>';
                     }
@@ -81,41 +75,39 @@
             {
                 text: 'Get WHO DONs',
                 action: function () {
-                    $.ajax({url: '/rerun_who',
-                            method: 'GET'}).done(function (){
-                                table.ajax.reload();
-                            });
+                    $.ajax({
+                        url: '/rerun_who',
+                        method: 'GET'
+                    }).done(function () {
+                        table.ajax.reload();
+                    });
                 }
-            },{
+            }, {
                 text: 'Get Promed Articles',
                 action: function () {
-                    alert( 'Not implemented :°(' ) 
+                    alert('Not implemented :°(')
                 }
             },
 
             'copy', 'csv', 'excel', 'pdf', 'print'
         ]
-    } );
-
-var table = $('#example').DataTable( {
-    ajax: "table.json"
-} );
+    });
 
 
-$('#form').on('submit', function(event){
-  var url_input = $('#url').val();
-  event.preventDefault();
-  $.ajax({
-    url: '/summarize',
-    data: {'url_input': url_input},
-    method: 'POST',
-    success: function(data) {
-      table.ajax.reload();
-      $('#url').val('');
-      $('#output').html(data['parsed_formatted'])
-    }
-  });
-});
-    </script>
-  </body>
+    $('#form').on('submit', function (event) {
+        var url_input = $('#url').val();
+        event.preventDefault();
+        $.ajax({
+            url: '/summarize',
+            data: {'url_input': url_input},
+            method: 'POST',
+            success: function (data) {
+                table.ajax.reload();
+                $('#url').val('');
+                $('#output').html(data['parsed_formatted'])
+            }
+        });
+    });
+</script>
+</body>
 </html>
