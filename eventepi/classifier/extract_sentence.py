@@ -6,7 +6,7 @@ from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 from typing import Tuple, Dict, Union, KeysView, List, Any
 
-from nlp_surveillance.classifier.create_labels import create_labels
+from eventepi.classifier.create_labels import create_labels
 
 
 def from_entity(text: str, to_optimize: str, event_db_entry: Any) -> List[Tuple[bool, str]]:

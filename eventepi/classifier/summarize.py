@@ -8,8 +8,8 @@ from epitator.resolved_keyword_annotator import ResolvedKeywordAnnotator
 from epitator.count_annotator import CountAnnotator
 from epitator.date_annotator import DateAnnotator
 
-from nlp_surveillance.my_utils import return_most_occuring_string_in_list
-from nlp_surveillance.classifier.extract_sentence import extract_entities_with_sentence
+from eventepi.my_utils import return_most_occuring_string_in_list
+from eventepi.classifier.extract_sentence import extract_entities_with_sentence
 
 
 def annotate_and_summarize(text, clf_dates, clf_counts):

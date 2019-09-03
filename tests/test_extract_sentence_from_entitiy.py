@@ -3,8 +3,8 @@ import os
 import pickle
 import sys
 
-from nlp_surveillance.classifier.extract_sentence import extract_entities_with_sentence
-from nlp_surveillance.my_utils import delete_non_epitator_name_entity_tiers
+from eventepi.classifier.extract_sentence import extract_entities_with_sentence
+from eventepi.my_utils import delete_non_epitator_name_entity_tiers
 
 sys.setrecursionlimit(5000)  # Otherwise serialization does not work
 
