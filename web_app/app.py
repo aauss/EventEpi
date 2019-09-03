@@ -1,18 +1,20 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
 import json
 import os
 import sys
 import pickle
 import time
-from datetime import datetime
-from nltk.tokenize import word_tokenize
 sys.path.insert(0, '/home/auss/github/nlp-surveillance')
 sys.path.insert(0, '/home/auss/github/nlp-surveillance/web_app')
+
+from flask import Flask, render_template, request, jsonify, send_from_directory
+from datetime import datetime
+from nltk.tokenize import word_tokenize
+from eventepi.scraper.text_extractor import extract_cleaned_text_from_url
+from eventepi.classifier.summarize import annotate_and_summarize
+from eventepi.pipeline import TrainNaiveBayes
+
 from embedder import MeanEmbeddingTransformer
 
-from nlp_surveillance.scraper.text_extractor import extract_cleaned_text_from_url
-from nlp_surveillance.classifier.summarize import annotate_and_summarize
-from nlp_surveillance.pipeline import TrainNaiveBayes
 
 app = Flask(__name__)
 
@@ -46,7 +48,7 @@ def summarize(url=None):
                                     TrainNaiveBayes('dates').data_output(),
                                     TrainNaiveBayes('counts').data_output(),
                                     )
-    relevance = calculate_relevanz(text)
+    relevance = calculate_relevance(text)
     parsed_as_dict = {'country': parsed["geoname"][0],
                       'confirmed': int(sum(parsed["counts"][0])/len(parsed["counts"][0])),
                       'disease': parsed["diseases"][0],
@@ -57,7 +59,6 @@ def summarize(url=None):
                       }
     parsed_formatted = (f'In {parsed_as_dict["country"]} are around {parsed_as_dict["confirmed"]} confirmed cases '
                         f'of {parsed_as_dict["disease"]} as of {parsed_as_dict["date"]}')
-    parsed_formatted = 'test'
     data = {'parsed_formatted': str(parsed_formatted),
             'as_dict': parsed_as_dict,
             }
@@ -76,7 +77,7 @@ def summarize(url=None):
     return data
 
 
-def calculate_relevanz(text):
+def calculate_relevance(text):
     token = word_tokenize(text)
     met = MeanEmbeddingTransformer()
     transform = met.fit_transform([token])

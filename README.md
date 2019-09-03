@@ -57,7 +57,7 @@ Also, we learn to determine the relevance of an article using a database. For th
 Our API looks like this:
 
 ```python
-from nlp_surveillance.classifier import summarize
+from eventepi.classfier import summarize
 
 article = """As of May 5 there five confirmed cases of Ebola disease virus in the Democratic Republic Congo
 """

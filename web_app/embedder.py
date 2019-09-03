@@ -1,5 +1,6 @@
-from sklearn.base import TransformerMixin
 import numpy as np
+
+from sklearn.base import TransformerMixin
 
 
 class MeanEmbeddingTransformer(TransformerMixin):
@@ -11,7 +12,7 @@ class MeanEmbeddingTransformer(TransformerMixin):
         E = {}
         vocab = []
 
-        with open('../nlp_surveillance/glove.6B.50d.txt', 'r', encoding="utf8") as file:
+        with open('../eventepi/glove.6B.50d.txt', 'r', encoding="utf8") as file:
             for i, line in enumerate(file):
                 l = line.split(' ')
                 if l[0].isalpha():

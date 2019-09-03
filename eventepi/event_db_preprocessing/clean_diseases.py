@@ -1,4 +1,4 @@
-from nlp_surveillance import my_utils
+from eventepi import my_utils
 
 
 def clean_diseases(event_db):

@@ -1,4 +1,4 @@
-from nlp_surveillance.pipeline import *
+from eventepi.pipeline import *
 
 
 def test_clean_event_db():

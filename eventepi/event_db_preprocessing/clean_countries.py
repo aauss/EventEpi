@@ -1,7 +1,7 @@
 import re
 import warnings
 
-from nlp_surveillance import my_utils
+from eventepi import my_utils
 
 
 def clean_countries(event_db):
