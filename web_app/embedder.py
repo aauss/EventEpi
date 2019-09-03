@@ -36,5 +36,5 @@ class MeanEmbeddingTransformer(TransformerMixin):
     def transform(self, X):
         return np.array([self._doc_mean(doc) for doc in X])
 
-    def fit_transform(self, X, y=None):
+    def fit_transform(self, X, y=None, **kwargs):
         return self.fit(X).transform(X)
