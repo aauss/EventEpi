@@ -1,0 +1,20 @@
+name: eventepi
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - jupyterlab=2.1.1
+  - pandas=1.0.3
+  - pip=20.0.2
+  - python=3.7.7
+  - pip:
+    - beautifulsoup4==4.9.0
+    - black==19.10b0
+    - nltk==3.5
+    - numpy==1.18.3
+    - pytest==5.4.1
+    - requests=2.23.0
+    - translate==3.5.0
+    - tqdm==4.45.0
+
+    

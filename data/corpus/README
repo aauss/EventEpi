@@ -1,0 +1,5 @@
+# Epidemiological Corpus
+
+This corpus is an collection of news articles that contain public-health relevant information that can be used for event-based surveillance.
+
+The documents collected for this corpus are published by [ProMED](https://promedmail.org/) and the [World Health Organization](https://www.who.int/csr/don/en/). We asked for permission to scrape these documents but never received an answer.

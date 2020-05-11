@@ -1,74 +1,10 @@
-This repo contains the work of **EventEpi**. EventEpi is a framework to support event-based surveillance. The framework contains three parts that build up the workflow of EventEpi:
+# EventEpi
 
-- `event_db_preprocessing` which contains exemplary preprocessing steps that might be necessary to utilize an epidemiological database.
-
-- `scraper` which contains a scraper for
-  - [WHO DONs](https://www.who.int/csr/don/en/) and [ProMed Mail](https://www.promedmail.org) articles
-  - Wikipedia's [sovereign state list](https://de.wikipedia.org/wiki/Liste_der_Staaten_der_Erde)
-  - A query to [Wikidata](https://www.wikidata.org/) containing all disease names in English and German.
-
-  Furthermore, it contains text extraction functionality to extract relevant text from raw HTML or PDFs.
-
-- `classifer` which contains the modules to extract key named entities out of epidemiological texts and determine the relevance of articles given a codebase.
-
-# Installation
-In your virtual environment
-
-`$ pip install -r requirements.txt`
-
-- NLTK needs corpora
-- EpiTator needs data
-
-# Functionality
-
-## Preprocessing
-Has the goal to translate German country and disease names to be comparable to output from [EpiTator](https://github.com/ecohealthalliance/EpiTator). This is important for the classifiers, since they require labels that are comparable to EpiTator's output. The translation requires the Wikidata and Wikipedia scrape since they are used as a translation dictionary. Also, it contains functions to correct spelling using Levenshtein Distance and formatting errors.
-
-## Scraper
-You can use the WHO and ProMed scraper like so which returns a list of articles. Look into the documentation for more options.
-
-```python
-from eventepi.scraper import promed_scraper, who_scraper
-
-year_range = (2012, 2018)
-proxy = {"http": "you_http_proxy", "https": "your_https_proxy"}
-promed_articles = promed_scraper.scrape(year_range, proxy=proxy)
-
-list_of_years = [2012, 2013, 2017]
-who_articles = who_scraper.scrape(list_of_years, proxy=proxy)
-```
-
-and for the translation of German disease and country names into English we used the following Wikidata and Wikipedia tables:
-
-```python
-from eventepi.scraper import wikidata_diseases, wikipedia_countries
-
-proxy = {"http_proxy": "you_http_proxy", "https_proxy": "your_https_proxy"}
-
-df_of_sovereign_states = wikipedia_countries.scrape_wikipedia_countries()
-df_of_ger_and_eng_disease_names = wikidata_diseases.disease_name_query(proxy)
-```
-
-## Classifer
-
-The classifier are trained using an annotated epidemiological database. One classification task is to find the key entity out of all entities (disease, country, confirmed case numbers) that EpiTator detects. We use either an modal-approach or a naive Bayes classifier on sentences that contain an entity. If the entity of a text is also in the database, we give it a positive label.
-
-Also, we learn to determine the relevance of an article using a database. For this, we compared several [classifiers](/notebooks/classification.ipynb) using the bag-of-words approach on whole epidemiological articles given a label whether they are interesting or not or on the document embedding.
-Our API looks like this:
-
-```python
-from eventepi.classfier import summarize
-
-article = """As of May 5 there five confirmed cases of Ebola disease virus in the Democratic Republic Congo
-"""
-
-# You need to have trained your own key entity and relevance classifier
-summary = summarize.annotate_and_summarize(article, key_date_classifier, key_count_classifier)
-
-print(summary)
-
-{"geoname": "Democratic Republic Congo", 
-"disease": "Ebola disease virus", 
-"counts": 5, 
-"date": "2019-05-05"}
-```
+## Installation
+1. Install environment ```conda env create -f environment.yml```
+2. Install external ressources 
+- ```python -m nltk.downloader all``` 
+- ```python -m spacy download en_core_web_md```
+-  ```python -m epitator.importers.import_geonames```
+-  ```python -m epitator.importers.import_disease_ontology```
+- ```python -m epitator.importers.import_wikidata```
