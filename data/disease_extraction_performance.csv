@@ -1,0 +1,170 @@
+,summarized,idb,correct
+0,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+1,listeriosis,Listeriosis,1
+2,plague,Plague,1
+3,cholera,Cholera,1
+4,leptospirosis,Leptospirosis,1
+5,tularemia,Tularaemia,1
+6,tick-borne relapsing fever,Tick-borne relapsing fever,1
+7,dengue hemorrhagic fever,Dengue hemorrhagic fever,1
+8,,Anthrax,
+9,cholera,,
+10,,Haemolytic-uremic syndrome,
+11,Lassa fever,Lassa fever,1
+12,Lassa fever,Lassa fever,1
+13,malaria,Malaria,1
+14,monkeypox,Monkeypox,1
+15,Nipah virus,,
+16,Nipah virus,,
+17,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+18,yellow fever,Yellow fever,1
+19,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+20,Nipah virus,,
+21,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+22,Japanese encephalitis,Japanese encephalitis,1
+23,monkeypox,Monkeypox,1
+24,Japanese encephalitis,Japanese encephalitis,1
+25,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+26,Rift Valley fever,Rift fever,1
+27,measles,Measles,1
+28,Marburg hemorrhagic fever,,
+29,yellow fever,Yellow fever,1
+30,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+31,influenza,,
+32,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+33,Lassa fever,Lassa fever,1
+34,Rift Valley fever,Rift fever,1
+35,Rift Valley fever,Rift fever,1
+36,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+37,poliomyelitis,Polio,1
+38,Nipah virus,,
+39,brucellosis,Brucellosis,1
+40,Lassa fever,Lassa fever,1
+41,Japanese encephalitis,Acute encephalitis syndrome,1
+42,,Primary amebic meningo-encephalitis,
+43,plague,Plague,1
+44,dengue hemorrhagic fever,Dengue hemorrhagic fever,1
+45,Crimean-Congo hemorrhagic fever,,
+46,malaria,,
+47,Ebola hemorrhagic fever,Ebola fever,1
+48,Nipah virus,,
+49,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+50,tick-borne encephalitis,Tick-borne encephalitis,1
+51,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+52,dracunculiasis,,
+53,legionellosis,Legionellosis,1
+54,cutaneous anthrax,Anthrax,1
+55,yellow fever,Hemorrhagic fever,1
+56,spotted fever,Hemorrhagic fever,1
+57,Crimean-Congo hemorrhagic fever,,
+58,poliomyelitis,,
+59,poliomyelitis,Acute flaccid paralysis,1
+60,legionellosis,Legionellosis,1
+61,influenza,Influenza,1
+62,tick-borne encephalitis,Tick-borne encephalitis,1
+63,Rift Valley fever,,
+64,yellow fever,Yellow fever,1
+65,brucellosis,Leptospirosis,0
+66,,Anthrax,
+67,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+68,Middle East respiratory syndrome,Middle east respiratory syndrome1
+69,yellow fever,Yellow fever,1
+70,yellow fever,Yellow fever,1
+71,cholera,Cholera,1
+73,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+72,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+74,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+75,avian influenza,Influenza,1
+76,yellow fever,Yellow fever,1
+77,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+78,influenza,West nile fever,0
+79,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+80,poliomyelitis,Poliomyelitis,1
+81,poliomyelitis,Poliomyelitis,1
+82,influenza,,
+83,schistosomiasis,Schistosomiasis,1
+84,schistosomiasis,Schistosomiasis,1
+85,schistosomiasis,Schistosomiasis,1
+86,schistosomiasis,Schistosomiasis,1
+87,malaria,,
+88,monkeypox,,
+89,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+90,influenza,,
+91,monkeypox,,
+92,poliomyelitis,Poliomyelitis,1
+93,viral infectious disease,West nile fever,0
+94,viral infectious disease,West nile fever,0
+95,viral infectious disease,West nile fever,0
+96,leptospirosis,Leptospirosis,1
+97,yellow fever,Yellow fever,1
+98,poliomyelitis,,
+99,monkeypox,,
+100,West Nile fever,,
+101,chikungunya,,
+102,tuberculosis,,
+103,rubella,Rubella,1
+104,typhus,,
+105,hantavirus pulmonary syndrome,,
+106,monkeypox,,
+107,hepatitis A,,
+108,cholera,,
+109,melioidosis,Melioidosis,1
+110,listeriosis,,
+111,malaria,Malaria,1
+112,Buruli ulcer disease,Buruli ulcer,1
+113,hepatitis A,Hepatitis a,1
+114,,Anthrax,
+115,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+116,rubella,Rubella,1
+117,monkeypox,Monkeypox,1
+118,Lassa fever,Lassa fever,1
+119,poliomyelitis,Poliomyelitis,1
+120,disease by infectious agent,,
+121,,Sepsis,
+122,human immunodeficiency virus infectious disease,Meningitis,0
+123,poliomyelitis,Acute flaccid paralysis,1
+124,,Necrotising enterocolitis,
+125,Japanese encephalitis,Japanese encephalitis,1
+126,rabies,Rabies,1
+127,Lassa fever,Lassa fever,1
+128,viral infectious disease,,
+129,mumps,Mumps,1
+130,,,
+131,hepatitis E,Hepatitis e,1
+132,Lassa fever,Lassa fever,1
+133,rabies,Rabies,1
+134,malaria,Malaria,1
+135,,,
+136,Japanese encephalitis,Japanese encephalitis,1
+137,malaria,Malaria,1
+138,dengue hemorrhagic fever,Dengue hemorrhagic fever,1
+139,Lassa fever,Lassa fever,1
+140,Lassa fever,Lassa fever,1
+141,malaria,Malaria,1
+142,Lassa fever,Lassa fever,1
+143,Ebola hemorrhagic fever,Ebola,1
+144,Ebola hemorrhagic fever,Ebola,1
+145,Ebola hemorrhagic fever,Ebola,1
+146,Nipah virus,,
+147,,Acute inflammatory demyelinating polyneuropathy,
+148,Ebola hemorrhagic fever,Ebola,1
+149,malaria,Ebola,0
+150,Crimean-Congo hemorrhagic fever,Crimean-congo hemorrhagic fever,1
+151,monkeypox,Monkeypox,1
+152,Rift Valley fever,Rift fever,1
+153,Rift Valley fever,Rift fever,1
+154,Rift Valley fever,Rift fever,1
+155,malaria,,
+156,Ebola hemorrhagic fever,Ebola fever,1
+157,poliomyelitis,Polio,1
+158,cholera,Cholera,1
+159,legionellosis,Pneumonia,1
+160,malaria,Malaria,1
+161,avian influenza,,
+162,typhus,,
+163,Acute flaccid myelitis,,
+164,Acute flaccid myelitis,Acute flaccid paralysis,1
+165,Norovirus,Norovirus gastroenteritis,1
+166,Middle East respiratory syndrome,Middle east respiratory syndrome,1
+167,typhus,,
+168,typhus,,

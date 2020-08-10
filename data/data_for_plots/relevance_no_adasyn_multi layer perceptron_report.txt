@@ -1,0 +1,9 @@
+                   pre       rec       spe        f1       geo       iba       sup
+
+      False       0.95      0.99      0.03      0.97      0.16      0.03       771
+       True       0.14      0.03      0.99      0.04      0.16      0.02        38
+
+avg / total       0.92      0.95      0.07      0.93      0.16      0.03       809
+
+
+training time: 0.1 min.

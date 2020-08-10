@@ -1,4 +1,9 @@
 .ipynb_checkpoints/
 .vscode
+*corpus/
+*corpus_processed/
+*embeddings/
+*lrp/
+*results/
 
 __pycache__
