@@ -185,8 +185,8 @@ class DataLoader:
 @dataclass
 class TextNormalizer(BaseEstimator, TransformerMixin):
 
-    stopwords: ClassVar = set(stopwords.words("english"))
-    lemmatizer: ClassVar = WordNetLemmatizer()
+    stopwords = set(stopwords.words("english"))
+    lemmatizer = WordNetLemmatizer()
 
     def is_punct(self, token):
         return all(unicodedata.category(char).startswith("P") for char in token)
@@ -628,3 +628,13 @@ class Trainer:
 
     def _identity(self, text):
         return text
+
+
+def main():
+    trainer = Trainer()
+    trainer.train_key_entity_classifications()
+    trainer.train_relevance_scoring()
+
+
+if __name__ == "__main__":
+    main()

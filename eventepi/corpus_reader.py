@@ -144,3 +144,7 @@ class PickledCorpusReader(CorpusReader):
         for path, enc in self.abspaths(fileids, include_encoding=True):
             with open(path, "rb") as f:
                 yield pickle.load(f)
+
+
+if __name__ == "__main__":
+    EpiCorpusReader().transform()

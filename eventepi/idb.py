@@ -23,7 +23,7 @@ class IDB:
     df: pd.DataFrame = pd.read_csv(idb_path)
     df_processed: pd.DataFrame = pd.DataFrame()
     translator: Translator = Translator(
-        from_lang="de", to_lang="en", email="a.abbood94@gmail.com"
+        from_lang="de", to_lang="en", email="hello@gmail.com"
     )
     tqdm.pandas(desc="Translate German content to English")
 
@@ -230,3 +230,7 @@ class IDB:
                 scraper._scrape_id(missing_id)
             return self._create_fileids_from_urls(df)
         return df.assign(fileid=lambda x: x["fileid"].apply(lambda x: x[0]))
+
+
+if __name__ == "__main__":
+    IDB().preprocess()

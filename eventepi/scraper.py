@@ -1,15 +1,18 @@
+import json
 import re
+import time
 from datetime import date
 from json import JSONDecodeError
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import click
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from requests.api import head
 from tqdm import tqdm
-
 
 
 class WhoDonScraper:
@@ -18,7 +21,7 @@ class WhoDonScraper:
     def __init__(
         self,
         headers,
-        path=(Path(__file__).parent.resolve() / Path("../../data/corpus/who_dons/")),
+        path=(Path(__file__).parent.resolve() / Path("../data/corpus/who_dons/")),
     ) -> None:
         """Initializes WhoDonScraper.
 
@@ -82,9 +85,7 @@ class ProMedScraper:
     def __init__(
         self,
         headers: Dict[str, str],
-        path: Path = (
-            Path(__file__).parent.resolve() / Path("../../data/corpus/promed/")
-        ),
+        path: Path = (Path(__file__).parent.resolve() / Path("../data/corpus/promed/")),
     ) -> None:
         """A scraper for ProMED mails.
 
@@ -114,13 +115,16 @@ class ProMedScraper:
             start: Start date for ID search (mm/dd/yy)
             end: End date for ID search (mm/dd/yy)
         """
+        # There are only 200 pages per search
         for page_num in range(200):
             response = self.make_search_request(page_num, start, end)
+            time.sleep(4)
             ids = self._extract_ids(response)
             self.ids.extend(ids)
             if self._id_search_done(response):
                 break
         if int(response["res_count"]) > 10000:
+            # The 200 page limit capped results. Continue search
             self._update_search()
 
     def _scrape_ids(self) -> None:
@@ -227,13 +231,27 @@ class ProMedScraper:
             f.write(body)
 
 
-if __name__ == "__main__":
-    scraper = WhoDonScraper(headers={"bla": "blu"})
+@click.command()
+@click.argument("headers")
+def cli(headers):
+    """Scrapes WHO DONs and ProMED articles.
+
+    Uses provided HEADERS to scrape.
+    Use JSON to assign HEADERS as expected by 
+    requests library. E.g., '{"user-agent": "me"}'
+    """
+    headers = json.loads(headers)
+    scraper = WhoDonScraper(headers)
     scraper.scrape()
     try:
-        s = ProMedScraper(headers={"thy": "though"})
+        s = ProMedScraper(headers)
         s.scrape()
     except Exception:
         print("Scraping failed")
         with open("checkpoint.txt", "w") as f:
+            print("Saving ProMED IDs under checkpoint.txt")
             f.write("\n".join(s.ids))
+
+
+if __name__ == "__main__":
+    cli()
