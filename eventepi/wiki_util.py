@@ -32,7 +32,7 @@ def download_wikipedia_corpus():
     wiki_dump_url = (
         "https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2"
     )
-    wiki_folder = Path(__file__).resolve().parent / Path("data/wikipedia")
+    wiki_folder = Path(__file__).resolve().parent.parent / Path("data/wikipedia")
     wiki_folder.mkdir(parents=True, exist_ok=True)
     file_path: Path = wiki_folder / Path("enwiki-latest-pages-articles.xml.bz2")
     with requests.get(wiki_dump_url, stream=True) as r:
